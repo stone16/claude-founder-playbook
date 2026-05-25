@@ -1,4 +1,14 @@
+# Harness per-task state (keep retro + config)
 .harness/*/
 !.harness/retro/
 !.harness/retro/**
 !.harness/config.json
+
+# Reference materials (not redistributed — see README for source URL)
+reference/
+
+# Node / build / coverage artifacts
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
