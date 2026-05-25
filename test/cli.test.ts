@@ -13,17 +13,17 @@ describe("main", () => {
     vi.restoreAllMocks();
   });
 
-  it("prints usage and returns zero for help", () => {
+  it("prints usage and returns zero for help", async () => {
     const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
-    expect(main(["--help"])).toBe(0);
+    expect(await main(["--help"])).toBe(0);
     expect(log).toHaveBeenCalledWith(usage());
   });
 
-  it("prints an error, usage, and returns non-zero for unknown commands", () => {
+  it("prints an error, usage, and returns non-zero for unknown commands", async () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-    expect(main(["unknown"])).toBe(1);
+    expect(await main(["unknown"])).toBe(1);
     expect(error).toHaveBeenCalledWith("Unknown command: unknown");
     expect(error).toHaveBeenCalledWith(usage());
   });
