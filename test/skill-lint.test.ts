@@ -14,6 +14,7 @@ const activitySkillNames = [
   "founder-market-research",
   "founder-user-discovery",
 ] as const;
+const ideaStageSkillNames = ["founder-idea", ...activitySkillNames] as const;
 const requiredActivitySections = [
   "## Purpose",
   "## When To Use",
@@ -122,6 +123,19 @@ describe("skill lint", () => {
 
     for (const verb of referencedVerbs) {
       expect(implementedFounderVerbs.has(verb)).toBe(true);
+    }
+  });
+
+  it("cross-checks founder CLI verbs for all four Idea-stage skills", () => {
+    for (const skillName of ideaStageSkillNames) {
+      const skillPath = skillName === "founder-idea" ? founderIdeaSkillPath : activitySkillPath(skillName);
+      const referencedVerbs = extractFounderCliVerbs(readMarkdown(skillPath));
+
+      expect(referencedVerbs.size, `${skillName} should name at least one founder CLI verb`).toBeGreaterThan(0);
+      expect(
+        [...referencedVerbs].filter((verb) => !implementedFounderVerbs.has(verb)),
+        `${skillName} should reference only implemented founder CLI verbs`,
+      ).toEqual([]);
     }
   });
 });
