@@ -3,6 +3,7 @@ import { plannedCommands, routeArgv } from "./router.js";
 import { initWorkspace } from "./commands/init.js";
 import { createIdea } from "./commands/new.js";
 import { useIdea } from "./commands/use.js";
+import { checkIdea } from "./commands/check.js";
 import { resolveWorkspaceRoot } from "./lib/paths.js";
 
 export function usage(): string {
@@ -63,6 +64,10 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
         await useIdea(workspaceRoot, slug);
         console.log(`Using founder idea ${slug}`);
         return 0;
+      }
+
+      if (result.command === "check") {
+        return await checkIdea(workspaceRoot, result.args);
       }
     } catch (error) {
       console.error(commandMessage(error as CommandError));
