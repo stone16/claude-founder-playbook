@@ -31,6 +31,15 @@ describe("StateSchema", () => {
   it("rejects malformed dates", () => {
     expect(StateSchema.safeParse({ ...validState, updatedAt: "May 25, 2026" }).success).toBe(false);
   });
+
+  it.each([
+    "2026-02-30T00:00:00Z",
+    "2026-04-31T00:00:00Z",
+    "2026-02-29T00:00:00Z",
+    "2026-05-25T24:00:00Z",
+  ])("rejects rollover UTC datetime %s", (updatedAt) => {
+    expect(StateSchema.safeParse({ ...validState, updatedAt }).success).toBe(false);
+  });
 });
 
 describe("state.json helpers", () => {
