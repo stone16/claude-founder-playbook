@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { IllegalStageTransitionError, advanceStage } from "../src/lib/transition.js";
+import { IllegalStageTransitionError, TerminalStageTransitionError, advanceStage } from "../src/lib/transition.js";
 import { type FounderState } from "../src/schemas/state.js";
 
 const baseState: FounderState = {
@@ -34,5 +34,14 @@ describe("advanceStage", () => {
     } catch (error) {
       expect(error).toMatchObject({ code: "ILLEGAL_STAGE_TRANSITION" });
     }
+  });
+
+  it("rejects attempts to advance past the terminal stage", () => {
+    const state = { ...baseState, currentStage: "scale" as const };
+
+    expect(() => advanceStage(state, "scale", "2026-05-26T00:00:00.000Z")).toThrow(TerminalStageTransitionError);
+    expect(() => advanceStage(state, "scale", "2026-05-26T00:00:00.000Z")).toThrow(
+      "Cannot advance past terminal stage scale",
+    );
   });
 });

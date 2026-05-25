@@ -47,7 +47,12 @@ function parseAdvanceArgs(args: readonly string[]): AdvanceArgs {
     }
 
     if (arg === "--override") {
-      overrideReason = args[index + 1];
+      const reason = args[index + 1];
+      if (reason === undefined || reason.startsWith("--")) {
+        throw new MissingOverrideReasonError();
+      }
+
+      overrideReason = reason;
       index += 1;
       continue;
     }

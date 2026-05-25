@@ -103,7 +103,7 @@ describe("founder advance", () => {
     const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
     const reason = "Founder accepts risk to run a concierge MVP";
 
-    expect(await main(["advance", "contract-review-tool", "--override", reason, "--workspace", workspace])).toBe(0);
+    expect(await main(["advance", "contract-review-tool", `--override=${reason}`, "--workspace", workspace])).toBe(0);
 
     const state = await readState(workspace);
     expect(state.currentStage).toBe("mvp");
@@ -130,5 +130,25 @@ describe("founder advance", () => {
     expect(state.currentStage).toBe("mvp");
     expect(state.overrides).toEqual([]);
     await expect(pathExists(path.join(ideaRoot(workspace), "mvp"))).resolves.toBe(true);
+  });
+
+  it("uses the active idea and --workspace= form when advancing a met gate", async () => {
+    const workspace = await createScaffoldedIdea();
+    await populatePassingIdea(workspace);
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+    expect(await main(["advance", `--workspace=${workspace}`])).toBe(0);
+
+    const state = await readState(workspace);
+    expect(state.currentStage).toBe("mvp");
+  });
+
+  it("rejects an override flag without a reason", async () => {
+    const workspace = await createScaffoldedIdea();
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    expect(await main(["advance", "contract-review-tool", "--override", "--workspace", workspace])).toBe(1);
+
+    expect(consoleOutput(error)).toContain("MISSING_OVERRIDE_REASON");
   });
 });
