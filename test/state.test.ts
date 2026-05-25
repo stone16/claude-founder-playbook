@@ -18,7 +18,8 @@ describe("StateSchema", () => {
   });
 
   it("rejects state missing currentStage", () => {
-    const { currentStage: _currentStage, ...missingCurrentStage } = validState;
+    const missingCurrentStage: Record<string, unknown> = { ...validState };
+    delete missingCurrentStage.currentStage;
 
     expect(StateSchema.safeParse(missingCurrentStage).success).toBe(false);
   });
@@ -44,6 +45,12 @@ describe("state.json helpers", () => {
 
   it("reads schema-valid JSON through an injected reader", async () => {
     const readFile = async () => JSON.stringify(state);
+
+    await expect(readStateJson("/workspace/idea/state.json", { readFile })).resolves.toEqual(state);
+  });
+
+  it("reads a schema-valid JSON buffer through an injected reader", async () => {
+    const readFile = async () => Buffer.from(JSON.stringify(state));
 
     await expect(readStateJson("/workspace/idea/state.json", { readFile })).resolves.toEqual(state);
   });
@@ -80,5 +87,18 @@ describe("state.json helpers", () => {
     expect(writtenPath).toBe("/workspace/idea/state.json");
     expect(JSON.parse(writtenBody)).toEqual(state);
     expect(writtenBody.endsWith("\n")).toBe(true);
+  });
+
+  it("returns a typed error when asked to write schema-invalid state", async () => {
+    const invalidState = { ...state, updatedAt: "May 25, 2026" };
+    const writeFile = async () => {
+      throw new Error("writer should not be called");
+    };
+
+    await expect(
+      writeStateJson("/workspace/idea/state.json", invalidState, { writeFile }),
+    ).rejects.toMatchObject({
+      code: "INVALID_STATE",
+    });
   });
 });

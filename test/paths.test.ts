@@ -11,6 +11,10 @@ describe("resolveWorkspaceRoot", () => {
     expect(resolveWorkspaceRoot({ cwd, env: {} })).toBe(path.join(cwd, "founder-journey"));
   });
 
+  it("falls back to process defaults when no input is provided", () => {
+    expect(resolveWorkspaceRoot()).toBe(path.join(process.cwd(), "founder-journey"));
+  });
+
   it("uses FOUNDER_JOURNEY when no explicit workspace flag is present", () => {
     expect(resolveWorkspaceRoot({ cwd, env: { FOUNDER_JOURNEY: "journeys" } })).toBe(
       path.join(cwd, "journeys"),
@@ -30,6 +34,12 @@ describe("resolveWorkspaceRoot", () => {
   it("supports --workspace=value syntax", () => {
     expect(resolveWorkspaceRoot({ argv: ["--workspace=custom"], cwd, env: {} })).toBe(
       path.join(cwd, "custom"),
+    );
+  });
+
+  it("ignores unrelated arguments while resolving workspace configuration", () => {
+    expect(resolveWorkspaceRoot({ argv: ["new", "Idea"], cwd, env: {} })).toBe(
+      path.join(cwd, "founder-journey"),
     );
   });
 });

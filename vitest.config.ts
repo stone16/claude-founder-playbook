@@ -7,6 +7,12 @@ export default defineConfig({
       include: ["src/**"],
       exclude: ["dist/**", "skills/**", "templates/**", "test/**"],
       reporter: ["text"],
+      thresholds: {
+        statements: 85,
+        branches: 85,
+        functions: 85,
+        lines: 85,
+      },
     },
   },
 });
