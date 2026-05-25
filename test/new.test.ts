@@ -60,4 +60,13 @@ describe("founder new", () => {
     await expect(readFile(firstStatePath, "utf8")).resolves.toBe(firstState);
     expect(error).toHaveBeenCalledWith(expect.stringContaining("IDEA_EXISTS"));
   });
+
+  it("rejects an idea name that cannot produce a slug with a typed error", async () => {
+    const workspace = await mkdtemp(path.join(tmpdir(), "founder-new-"));
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    expect(await main(["new", "!!!", "--workspace", workspace])).toBe(1);
+
+    expect(error).toHaveBeenCalledWith(expect.stringContaining("INVALID_IDEA_NAME"));
+  });
 });
