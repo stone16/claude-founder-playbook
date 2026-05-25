@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import matter from "gray-matter";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 import { type FounderState, StateSchema } from "../../src/schemas/state.js";
 import { stageManifest } from "../../src/stages/idea.js";
@@ -17,6 +17,19 @@ type CliResult = {
   stdout: string;
   stderr: string;
 };
+
+function buildCli(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    execFile("npm", ["run", "build"], { cwd: process.cwd() }, (error, stdout, stderr) => {
+      if (error === null) {
+        resolve();
+        return;
+      }
+
+      reject(new Error([stdout, stderr].filter((output) => output.length > 0).join("\n")));
+    });
+  });
+}
 
 function runFounder(args: readonly string[]): Promise<CliResult> {
   return new Promise((resolve) => {
@@ -106,6 +119,10 @@ async function populatePassingIdea(workspace: string, slug: string): Promise<voi
 }
 
 describe("Idea-stage lifecycle e2e", () => {
+  beforeAll(async () => {
+    await buildCli();
+  }, 30_000);
+
   it("runs init, new, check, list, and advance through the real founder CLI", async () => {
     const workspace = await mkdtemp(path.join(tmpdir(), "founder-e2e-"));
 
