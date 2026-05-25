@@ -1,10 +1,10 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const SURFACES_REFERENCE = `# Founder Journey Surfaces
-
-Use Chat for founder interviews and synthesis, Cowork for structured artifact writing, and Code for deterministic validation through the founder CLI.
-`;
+const moduleDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(moduleDir, "..", "..");
+const surfacesTemplatePath = path.join(repoRoot, "templates", "idea", "_reference", "surfaces.md");
 
 async function writeSeedFile(filePath: string, body: string): Promise<void> {
   try {
@@ -20,7 +20,8 @@ async function writeSeedFile(filePath: string, body: string): Promise<void> {
 
 export async function initWorkspace(workspaceRoot: string): Promise<void> {
   const referenceDir = path.join(workspaceRoot, "_reference");
+  const surfacesReference = await readFile(surfacesTemplatePath, "utf8");
 
   await mkdir(referenceDir, { recursive: true });
-  await writeSeedFile(path.join(referenceDir, "surfaces.md"), SURFACES_REFERENCE);
+  await writeSeedFile(path.join(referenceDir, "surfaces.md"), surfacesReference);
 }
