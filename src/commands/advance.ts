@@ -2,7 +2,8 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 
 import { readActiveIdea } from "../lib/active.js";
-import { writeOverrideArtifact } from "../lib/override.js";
+import { positionalArgs } from "../lib/args.js";
+import { overrideArtifactName, writeOverrideArtifact } from "../lib/override.js";
 import { readStateJson, writeStateJson } from "../lib/state.js";
 import { advanceStage } from "../lib/transition.js";
 import { validateIdeaStage } from "../lib/validate.js";
@@ -31,20 +32,11 @@ type AdvanceArgs = {
 };
 
 function parseAdvanceArgs(args: readonly string[]): AdvanceArgs {
-  const positionals: string[] = [];
   let overrideReason: string | undefined;
+  const argsWithoutOverride: string[] = [];
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
-
-    if (arg === "--workspace") {
-      index += 1;
-      continue;
-    }
-
-    if (arg.startsWith("--workspace=")) {
-      continue;
-    }
 
     if (arg === "--override") {
       const reason = args[index + 1];
@@ -62,7 +54,7 @@ function parseAdvanceArgs(args: readonly string[]): AdvanceArgs {
       continue;
     }
 
-    positionals.push(arg);
+    argsWithoutOverride.push(arg);
   }
 
   if (overrideReason !== undefined && overrideReason.trim() === "") {
@@ -70,7 +62,7 @@ function parseAdvanceArgs(args: readonly string[]): AdvanceArgs {
   }
 
   return {
-    ideaSlug: positionals[0],
+    ideaSlug: positionalArgs(argsWithoutOverride)[0],
     overrideReason,
   };
 }
@@ -101,10 +93,8 @@ export async function advanceIdea(workspaceRoot: string, args: readonly string[]
   }
 
   const advancedAt = new Date().toISOString();
-  const artifact =
-    parsed.overrideReason === undefined
-      ? undefined
-      : await writeOverrideArtifact(ideaRoot, currentStage, parsed.overrideReason, advancedAt);
+  const shouldRecordOverride = !validation.ok && parsed.overrideReason !== undefined;
+  const artifact = shouldRecordOverride ? overrideArtifactName(currentStage) : undefined;
   const nextState = advanceStage(
     state,
     currentStage,
@@ -118,6 +108,10 @@ export async function advanceIdea(workspaceRoot: string, args: readonly string[]
           artifact,
         },
   );
+
+  if (shouldRecordOverride && parsed.overrideReason !== undefined) {
+    await writeOverrideArtifact(ideaRoot, currentStage, parsed.overrideReason, advancedAt);
+  }
 
   await createStageDirectory(ideaRoot, nextState.currentStage);
   await writeStateJson(statePath, nextState);

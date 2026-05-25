@@ -1,4 +1,5 @@
 import { readActiveIdea } from "../lib/active.js";
+import { positionalArgs } from "../lib/args.js";
 import { buildIdeaReport, renderStatusReport } from "../lib/report.js";
 
 export class MissingStatusIdeaError extends Error {
@@ -8,26 +9,6 @@ export class MissingStatusIdeaError extends Error {
     super("No founder idea selected or created. Run founder new \"Idea Name\" or pass an idea slug.");
     this.name = "MissingStatusIdeaError";
   }
-}
-
-function positionalArgs(args: readonly string[]): string[] {
-  const positionals: string[] = [];
-
-  for (let index = 0; index < args.length; index += 1) {
-    const arg = args[index];
-    if (arg === "--workspace") {
-      index += 1;
-      continue;
-    }
-
-    if (arg.startsWith("--workspace=")) {
-      continue;
-    }
-
-    positionals.push(arg);
-  }
-
-  return positionals;
 }
 
 export async function statusIdea(workspaceRoot: string, args: readonly string[]): Promise<number> {

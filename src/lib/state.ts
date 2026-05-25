@@ -4,7 +4,7 @@ import { ZodError } from "zod";
 
 import { type FounderState, StateSchema } from "../schemas/state.js";
 
-export type StateFileErrorCode = "INVALID_JSON" | "INVALID_STATE";
+export type StateFileErrorCode = "INVALID_JSON" | "INVALID_STATE" | "MISSING_STATE" | "UNREADABLE_STATE";
 
 export class StateFileError extends Error {
   readonly code: StateFileErrorCode;
@@ -30,7 +30,17 @@ export async function readStateJson(
   filePath: string,
   reader: StateReader = { readFile: nodeReadFile },
 ): Promise<FounderState> {
-  const raw = await reader.readFile(filePath, "utf8");
+  let raw: string | Buffer;
+  try {
+    raw = await reader.readFile(filePath, "utf8");
+  } catch (error) {
+    const code =
+      typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT"
+        ? "MISSING_STATE"
+        : "UNREADABLE_STATE";
+    throw new StateFileError(code, `Unable to read state file ${filePath}`, error);
+  }
+
   const body = typeof raw === "string" ? raw : raw.toString("utf8");
   let parsed: unknown;
 

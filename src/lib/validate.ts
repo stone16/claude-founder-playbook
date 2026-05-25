@@ -45,6 +45,10 @@ type MatterDocument = {
   content: string;
 };
 
+const evidenceTargets = new Set(
+  [...stageManifest.idea.required, ...stageManifest.idea.recommended].map((artifact) => `${artifact}.md`),
+);
+
 async function pathExists(filePath: string): Promise<boolean> {
   try {
     await stat(filePath);
@@ -72,9 +76,21 @@ async function readMarkdown(filePath: string): Promise<MatterDocument> {
   };
 }
 
-function evidenceArtifactPath(stageRoot: string, evidence: string): string {
-  const [target] = evidence.split("#", 1);
-  return path.join(stageRoot, target ?? "");
+function evidenceArtifactPath(stageRoot: string, evidence: string): string | undefined {
+  const [rawTarget] = evidence.split("#", 1);
+  const target = rawTarget?.trim();
+
+  if (target === undefined || target === "" || path.basename(target) !== target || !evidenceTargets.has(target)) {
+    return undefined;
+  }
+
+  const resolved = path.resolve(stageRoot, target);
+  const resolvedStageRoot = path.resolve(stageRoot);
+  if (resolved === resolvedStageRoot || !resolved.startsWith(`${resolvedStageRoot}${path.sep}`)) {
+    return undefined;
+  }
+
+  return resolved;
 }
 
 async function validateArtifact(
@@ -192,7 +208,8 @@ async function validateGate(stageRoot: string, issues: ValidationIssue[]): Promi
     }
 
     for (const evidence of value.evidence) {
-      if (!(await pathExists(evidenceArtifactPath(stageRoot, evidence)))) {
+      const artifactPath = evidenceArtifactPath(stageRoot, evidence);
+      if (artifactPath === undefined || !(await pathExists(artifactPath))) {
         issues.push({
           code: "GATE_EVIDENCE_TARGET_MISSING",
           criterion,

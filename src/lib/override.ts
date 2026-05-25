@@ -7,6 +7,11 @@ export function overrideArtifactName(stage: Stage): string {
   return `OVERRIDE-${stage}.md`;
 }
 
+function fencedReason(reason: string): string {
+  const fence = reason.includes("```") ? "~~~~" : "```";
+  return [fence, reason.trim(), fence].join("\n");
+}
+
 export async function writeOverrideArtifact(
   ideaRoot: string,
   stage: Stage,
@@ -24,7 +29,7 @@ export async function writeOverrideArtifact(
     "",
     "## Reason",
     "",
-    reason,
+    fencedReason(reason),
     "",
   ].join("\n");
 

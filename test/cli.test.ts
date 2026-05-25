@@ -45,4 +45,12 @@ describe("main", () => {
 
     expect(error).toHaveBeenCalledWith(expect.stringContaining("MISSING_IDEA_SELECTION"));
   });
+
+  it("returns non-zero when --workspace is missing a value", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    expect(await main(["init", "--workspace"])).toBe(1);
+
+    expect(error).toHaveBeenCalledWith(expect.stringContaining("MISSING_WORKSPACE_VALUE"));
+  });
 });

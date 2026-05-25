@@ -1,4 +1,4 @@
-import { mkdtemp, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -94,5 +94,19 @@ describe("founder list", () => {
     expect(await main(["list", "--workspace", workspace])).toBe(0);
 
     expect(consoleOutput(log)).toContain("No founder ideas found.");
+  });
+
+  it("keeps listing valid ideas when one idea has invalid state", async () => {
+    const workspace = await createWorkspace("founder-list-invalid-");
+    await main(["new", "Contract Review Tool", "--workspace", workspace]);
+    await mkdir(path.join(workspace, "broken-idea"));
+    await writeFile(path.join(workspace, "broken-idea", "state.json"), "{", "utf8");
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+    expect(await main(["list", "--workspace", workspace])).toBe(0);
+
+    const output = consoleOutput(log);
+    expect(output).toContain("contract-review-tool");
+    expect(output).toContain("broken-idea  invalid  invalid blocked: invalid state");
   });
 });

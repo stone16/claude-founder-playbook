@@ -42,7 +42,7 @@ export type IdeaReport = {
 
 export type IdeaListEntry = {
   ideaSlug: string;
-  stage: Stage;
+  stage: Stage | "invalid";
   gateToken: string;
   blockers: string[];
 };
@@ -118,7 +118,17 @@ async function buildArtifactChecklist(
   );
 }
 
-function summarizeGate(issues: readonly ValidationIssue[]): IdeaReport["gate"] {
+function summarizeGate(stage: Stage, issues: readonly ValidationIssue[]): IdeaReport["gate"] {
+  if (stage !== "idea") {
+    return {
+      passed: 0,
+      total: 0,
+      ok: true,
+      blockers: [],
+      token: "n/a",
+    };
+  }
+
   const blockedCriteria = new Set<GateCriterion>();
   let gateShapeBlocks = false;
 
@@ -149,7 +159,7 @@ function summarizeGate(issues: readonly ValidationIssue[]): IdeaReport["gate"] {
 export async function buildIdeaReport(workspaceRoot: string, ideaSlug: string): Promise<IdeaReport> {
   const state = await readStateJson(path.join(workspaceRoot, ideaSlug, "state.json"));
   const validation = await validateIdeaStage(workspaceRoot, ideaSlug, state.currentStage);
-  const gate = summarizeGate(validation.issues);
+  const gate = summarizeGate(state.currentStage, validation.issues);
 
   return {
     ideaSlug,
@@ -203,13 +213,22 @@ export async function buildIdeaList(workspaceRoot: string): Promise<IdeaListEntr
 
   return await Promise.all(
     slugs.map(async (ideaSlug) => {
-      const report = await buildIdeaReport(workspaceRoot, ideaSlug);
-      return {
-        ideaSlug,
-        stage: report.stage,
-        gateToken: report.gate.token,
-        blockers: report.gate.blockers,
-      };
+      try {
+        const report = await buildIdeaReport(workspaceRoot, ideaSlug);
+        return {
+          ideaSlug,
+          stage: report.stage,
+          gateToken: report.gate.token,
+          blockers: report.gate.blockers,
+        };
+      } catch {
+        return {
+          ideaSlug,
+          stage: "invalid",
+          gateToken: "invalid",
+          blockers: ["invalid state"],
+        };
+      }
     }),
   );
 }

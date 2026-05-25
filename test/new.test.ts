@@ -69,4 +69,14 @@ describe("founder new", () => {
 
     expect(error).toHaveBeenCalledWith(expect.stringContaining("INVALID_IDEA_NAME"));
   });
+
+  it("ignores workspace flags before the idea name", async () => {
+    const workspace = await mkdtemp(path.join(tmpdir(), "founder-new-prefix-workspace-"));
+
+    expect(await main(["new", "--workspace", workspace, "Workspace Flag Idea"])).toBe(0);
+
+    await expect(readFile(path.join(workspace, "workspace-flag-idea", "state.json"), "utf8")).resolves.toContain(
+      "Workspace Flag Idea",
+    );
+  });
 });

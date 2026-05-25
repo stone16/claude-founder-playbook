@@ -132,6 +132,35 @@ describe("founder advance", () => {
     await expect(pathExists(path.join(ideaRoot(workspace), "mvp"))).resolves.toBe(true);
   });
 
+  it("ignores an override reason when the Idea gate is already met", async () => {
+    const workspace = await createScaffoldedIdea();
+    await populatePassingIdea(workspace);
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+    expect(await main(["advance", "contract-review-tool", "--override", "not needed", "--workspace", workspace])).toBe(0);
+
+    const state = await readState(workspace);
+    expect(state.currentStage).toBe("mvp");
+    expect(state.overrides).toEqual([]);
+    await expect(pathExists(path.join(ideaRoot(workspace), "OVERRIDE-idea.md"))).resolves.toBe(false);
+  });
+
+  it("does not write an override artifact when the transition is illegal", async () => {
+    const workspace = await createScaffoldedIdea();
+    const state = await readState(workspace);
+    await writeFile(
+      path.join(ideaRoot(workspace), "state.json"),
+      `${JSON.stringify({ ...state, currentStage: "scale", updatedAt: new Date().toISOString() }, null, 2)}\n`,
+      "utf8",
+    );
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    expect(await main(["advance", "contract-review-tool", "--override", "force", "--workspace", workspace])).toBe(1);
+
+    expect(consoleOutput(error)).toContain("TERMINAL_STAGE");
+    await expect(pathExists(path.join(ideaRoot(workspace), "OVERRIDE-scale.md"))).resolves.toBe(false);
+  });
+
   it("uses the active idea and --workspace= form when advancing a met gate", async () => {
     const workspace = await createScaffoldedIdea();
     await populatePassingIdea(workspace);
@@ -150,5 +179,15 @@ describe("founder advance", () => {
     expect(await main(["advance", "contract-review-tool", "--override", "--workspace", workspace])).toBe(1);
 
     expect(consoleOutput(error)).toContain("MISSING_OVERRIDE_REASON");
+  });
+
+  it("surfaces a typed state error when state.json is unreadable", async () => {
+    const workspace = await createScaffoldedIdea();
+    await writeFile(path.join(ideaRoot(workspace), "state.json"), "{", "utf8");
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    expect(await main(["advance", "contract-review-tool", "--workspace", workspace])).toBe(1);
+
+    expect(consoleOutput(error)).toContain("INVALID_JSON");
   });
 });

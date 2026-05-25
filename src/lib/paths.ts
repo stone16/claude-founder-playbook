@@ -8,12 +8,24 @@ export type WorkspaceResolutionInput = {
   env?: Record<string, string | undefined>;
 };
 
+export class WorkspacePathError extends Error {
+  readonly code = "MISSING_WORKSPACE_VALUE";
+
+  constructor(message: string) {
+    super(message);
+  }
+}
+
 function workspaceFlagValue(argv: readonly string[] = []): string | undefined {
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
 
     if (arg === "--workspace") {
-      return argv[index + 1];
+      const value = argv[index + 1];
+      if (value === undefined || value.startsWith("--")) {
+        throw new WorkspacePathError("--workspace requires a value");
+      }
+      return value;
     }
 
     if (arg.startsWith("--workspace=")) {

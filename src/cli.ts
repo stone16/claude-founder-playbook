@@ -7,6 +7,7 @@ import { checkIdea } from "./commands/check.js";
 import { statusIdea } from "./commands/status.js";
 import { listIdeas } from "./commands/list.js";
 import { advanceIdea } from "./commands/advance.js";
+import { positionalArgs } from "./lib/args.js";
 import { resolveWorkspaceRoot } from "./lib/paths.js";
 
 export function usage(): string {
@@ -36,9 +37,9 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
   }
 
   if (result.ok) {
-    const workspaceRoot = resolveWorkspaceRoot({ argv: result.args });
-
     try {
+      const workspaceRoot = resolveWorkspaceRoot({ argv: result.args });
+
       if (result.command === "init") {
         await initWorkspace(workspaceRoot);
         console.log(`Initialized founder workspace at ${workspaceRoot}`);
@@ -46,7 +47,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       }
 
       if (result.command === "new") {
-        const [ideaName] = result.args;
+        const [ideaName] = positionalArgs(result.args);
         if (ideaName === undefined) {
           console.error("Missing idea name");
           return 1;
@@ -58,7 +59,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       }
 
       if (result.command === "use") {
-        const [slug] = result.args;
+        const [slug] = positionalArgs(result.args);
         if (slug === undefined) {
           console.error("Missing idea slug");
           return 1;

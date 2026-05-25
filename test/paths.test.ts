@@ -2,7 +2,7 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { resolveWorkspaceRoot } from "../src/lib/paths.js";
+import { resolveWorkspaceRoot, WorkspacePathError } from "../src/lib/paths.js";
 
 describe("resolveWorkspaceRoot", () => {
   const cwd = path.resolve("/tmp/founder-project");
@@ -46,6 +46,13 @@ describe("resolveWorkspaceRoot", () => {
   it("treats a whitespace-only --workspace value as absent", () => {
     expect(resolveWorkspaceRoot({ argv: ["--workspace", "  "], cwd, env: {} })).toBe(
       path.join(cwd, "founder-journey"),
+    );
+  });
+
+  it("rejects --workspace without a value", () => {
+    expect(() => resolveWorkspaceRoot({ argv: ["--workspace"], cwd, env: {} })).toThrow(WorkspacePathError);
+    expect(() => resolveWorkspaceRoot({ argv: ["--workspace", "--help"], cwd, env: {} })).toThrow(
+      WorkspacePathError,
     );
   });
 

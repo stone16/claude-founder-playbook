@@ -149,6 +149,25 @@ describe("founder check", () => {
     expect(consoleErrors()).toContain("missing artifact");
   });
 
+  it("fails when gate evidence is empty, anchor-only, or outside the Idea artifact set", async () => {
+    const workspace = await createScaffoldedIdea();
+    await populateRequiredArtifacts(workspace);
+    await writeGate(workspace, {
+      problem_real_specific: { answer: true, evidence: [""] },
+      solution_addresses_actual_problem: { answer: true, evidence: ["#solution-fit"] },
+      enough_signal_to_build: { answer: true, evidence: ["../../package.json"] },
+    });
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    expect(await main(["check", "contract-review-tool", "--workspace", workspace])).toBe(1);
+
+    const errors = consoleErrors();
+    expect(errors).toContain("problem_real_specific");
+    expect(errors).toContain("solution_addresses_actual_problem");
+    expect(errors).toContain("enough_signal_to_build");
+    expect(errors).toContain("missing artifact");
+  });
+
   it("fails when state.json currentStage disagrees with the checked stage", async () => {
     const workspace = await createScaffoldedIdea();
     await populatePassingIdea(workspace);
