@@ -1,0 +1,134 @@
+import { mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
+import matter from "gray-matter";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+import { main } from "../src/cli.js";
+import { type FounderState, StateSchema } from "../src/schemas/state.js";
+import { stageManifest } from "../src/stages/idea.js";
+
+const now = "2026-05-25T00:00:00.000Z";
+
+async function pathExists(filePath: string): Promise<boolean> {
+  try {
+    await stat(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function createScaffoldedIdea(): Promise<string> {
+  const workspace = await mkdtemp(path.join(tmpdir(), "founder-advance-"));
+  await main(["new", "Contract Review Tool", "--workspace", workspace]);
+  return workspace;
+}
+
+function ideaRoot(workspace: string): string {
+  return path.join(workspace, "contract-review-tool");
+}
+
+function ideaStageRoot(workspace: string): string {
+  return path.join(ideaRoot(workspace), "idea");
+}
+
+async function readState(workspace: string): Promise<FounderState> {
+  return StateSchema.parse(JSON.parse(await readFile(path.join(ideaRoot(workspace), "state.json"), "utf8")));
+}
+
+async function populatePassingIdea(workspace: string): Promise<void> {
+  for (const artifact of stageManifest.idea.required) {
+    await writeFile(
+      path.join(ideaStageRoot(workspace), `${artifact}.md`),
+      matter.stringify(`# ${artifact}\n\nSpecific customer evidence with concrete details.\n`, {
+        artifact,
+        stage: "idea",
+        status: "complete",
+        updated: now,
+        evidence: [],
+      }),
+      "utf8",
+    );
+  }
+
+  await writeFile(
+    path.join(ideaStageRoot(workspace), "GATE.md"),
+    matter.stringify("# Idea Gate\n\nEvidence-backed gate decision.\n", {
+      status: "complete",
+      override: null,
+      criteria: {
+        problem_real_specific: {
+          answer: true,
+          evidence: ["problem-hypothesis.md#specific-problem"],
+        },
+        solution_addresses_actual_problem: {
+          answer: true,
+          evidence: ["solution-concept.md#solution-fit"],
+        },
+        enough_signal_to_build: {
+          answer: true,
+          evidence: ["interview-synthesis.md#signal"],
+        },
+      },
+    }),
+    "utf8",
+  );
+}
+
+function consoleOutput(spy: ReturnType<typeof vi.spyOn>): string {
+  return spy.mock.calls.map((call) => call.join(" ")).join("\n");
+}
+
+describe("founder advance", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("blocks an unmet Idea gate without mutating state.json", async () => {
+    const workspace = await createScaffoldedIdea();
+    const stateBefore = await readFile(path.join(ideaRoot(workspace), "state.json"), "utf8");
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    expect(await main(["advance", "contract-review-tool", "--workspace", workspace])).toBe(1);
+
+    await expect(readFile(path.join(ideaRoot(workspace), "state.json"), "utf8")).resolves.toBe(stateBefore);
+    await expect(pathExists(path.join(ideaRoot(workspace), "mvp"))).resolves.toBe(false);
+    expect(consoleOutput(error)).toContain("ADVANCE_BLOCKED");
+  });
+
+  it("records an override and advances an unmet Idea gate when a reason is provided", async () => {
+    const workspace = await createScaffoldedIdea();
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const reason = "Founder accepts risk to run a concierge MVP";
+
+    expect(await main(["advance", "contract-review-tool", "--override", reason, "--workspace", workspace])).toBe(0);
+
+    const state = await readState(workspace);
+    expect(state.currentStage).toBe("mvp");
+    expect(state.overrides).toHaveLength(1);
+    expect(state.overrides[0]).toMatchObject({
+      stage: "idea",
+      reason,
+      artifact: "OVERRIDE-idea.md",
+    });
+    expect(new Date(state.overrides[0].date).toISOString()).toBe(state.overrides[0].date);
+    await expect(pathExists(path.join(ideaRoot(workspace), "mvp"))).resolves.toBe(true);
+    await expect(readFile(path.join(ideaRoot(workspace), "OVERRIDE-idea.md"), "utf8")).resolves.toContain(reason);
+    expect(consoleOutput(log)).toContain("ADVANCED");
+  });
+
+  it("advances a met Idea gate without an override and creates the next stage directory", async () => {
+    const workspace = await createScaffoldedIdea();
+    await populatePassingIdea(workspace);
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+    expect(await main(["advance", "contract-review-tool", "--workspace", workspace])).toBe(0);
+
+    const state = await readState(workspace);
+    expect(state.currentStage).toBe("mvp");
+    expect(state.overrides).toEqual([]);
+    await expect(pathExists(path.join(ideaRoot(workspace), "mvp"))).resolves.toBe(true);
+  });
+});

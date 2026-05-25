@@ -38,11 +38,11 @@ describe("main", () => {
     expect(error).toHaveBeenCalledWith("Missing idea slug");
   });
 
-  it("keeps unimplemented planned commands on usage output", async () => {
-    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+  it("returns non-zero when advance has no idea selection", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-    expect(await main(["advance"])).toBe(0);
+    expect(await main(["advance"])).toBe(1);
 
-    expect(log).toHaveBeenCalledWith(usage());
+    expect(error).toHaveBeenCalledWith(expect.stringContaining("MISSING_IDEA_SELECTION"));
   });
 });
