@@ -4,6 +4,8 @@ import { initWorkspace } from "./commands/init.js";
 import { createIdea } from "./commands/new.js";
 import { useIdea } from "./commands/use.js";
 import { checkIdea } from "./commands/check.js";
+import { statusIdea } from "./commands/status.js";
+import { listIdeas } from "./commands/list.js";
 import { resolveWorkspaceRoot } from "./lib/paths.js";
 
 export function usage(): string {
@@ -68,6 +70,14 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
 
       if (result.command === "check") {
         return await checkIdea(workspaceRoot, result.args);
+      }
+
+      if (result.command === "status") {
+        return await statusIdea(workspaceRoot, result.args);
+      }
+
+      if (result.command === "list") {
+        return await listIdeas(workspaceRoot);
       }
     } catch (error) {
       console.error(commandMessage(error as CommandError));

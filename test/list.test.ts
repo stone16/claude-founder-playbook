@@ -86,4 +86,13 @@ describe("founder list", () => {
     expect(output).toContain("2/3 ✗");
     expect(output).toContain("blocked: enough_signal_to_build");
   });
+
+  it("prints an empty portfolio message when the workspace has no ideas", async () => {
+    const workspace = await createWorkspace("founder-list-empty-");
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+    expect(await main(["list", "--workspace", workspace])).toBe(0);
+
+    expect(consoleOutput(log)).toContain("No founder ideas found.");
+  });
 });

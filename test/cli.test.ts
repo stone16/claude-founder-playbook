@@ -41,7 +41,7 @@ describe("main", () => {
   it("keeps unimplemented planned commands on usage output", async () => {
     const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
-    expect(await main(["status"])).toBe(0);
+    expect(await main(["advance"])).toBe(0);
 
     expect(log).toHaveBeenCalledWith(usage());
   });
