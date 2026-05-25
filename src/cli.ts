@@ -6,6 +6,7 @@ import { useIdea } from "./commands/use.js";
 import { checkIdea } from "./commands/check.js";
 import { statusIdea } from "./commands/status.js";
 import { listIdeas } from "./commands/list.js";
+import { advanceIdea } from "./commands/advance.js";
 import { resolveWorkspaceRoot } from "./lib/paths.js";
 
 export function usage(): string {
@@ -78,6 +79,10 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
 
       if (result.command === "list") {
         return await listIdeas(workspaceRoot);
+      }
+
+      if (result.command === "advance") {
+        return await advanceIdea(workspaceRoot, result.args);
       }
     } catch (error) {
       console.error(commandMessage(error as CommandError));
