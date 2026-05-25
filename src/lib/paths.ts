@@ -24,6 +24,11 @@ function workspaceFlagValue(argv: readonly string[] = []): string | undefined {
   return undefined;
 }
 
+function nonBlank(value: string | undefined): string | undefined {
+  const trimmedValue = value?.trim();
+  return trimmedValue === "" ? undefined : trimmedValue;
+}
+
 function resolveFromCwd(workspacePath: string, cwd: string): string {
   return path.isAbsolute(workspacePath) ? path.normalize(workspacePath) : path.resolve(cwd, workspacePath);
 }
@@ -31,7 +36,7 @@ function resolveFromCwd(workspacePath: string, cwd: string): string {
 export function resolveWorkspaceRoot(input: WorkspaceResolutionInput = {}): string {
   const cwd = input.cwd ?? process.cwd();
   const env = input.env ?? process.env;
-  const configuredPath = workspaceFlagValue(input.argv) ?? env.FOUNDER_JOURNEY ?? DEFAULT_WORKSPACE;
+  const configuredPath = nonBlank(workspaceFlagValue(input.argv)) ?? nonBlank(env.FOUNDER_JOURNEY) ?? DEFAULT_WORKSPACE;
 
   return resolveFromCwd(configuredPath, cwd);
 }

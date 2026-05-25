@@ -43,6 +43,18 @@ describe("resolveWorkspaceRoot", () => {
     );
   });
 
+  it("treats a whitespace-only --workspace value as absent", () => {
+    expect(resolveWorkspaceRoot({ argv: ["--workspace", "  "], cwd, env: {} })).toBe(
+      path.join(cwd, "founder-journey"),
+    );
+  });
+
+  it("treats an empty FOUNDER_JOURNEY value as absent", () => {
+    expect(resolveWorkspaceRoot({ cwd, env: { FOUNDER_JOURNEY: "" } })).toBe(
+      path.join(cwd, "founder-journey"),
+    );
+  });
+
   it("treats a whitespace-only FOUNDER_JOURNEY value as absent", () => {
     expect(resolveWorkspaceRoot({ cwd, env: { FOUNDER_JOURNEY: "  " } })).toBe(
       path.join(cwd, "founder-journey"),
