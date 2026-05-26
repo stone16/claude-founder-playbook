@@ -50,11 +50,17 @@ async function pathExists(filePath: string): Promise<boolean> {
   }
 }
 
-function artifactIssueNotes(issues: readonly ValidationIssue[], artifact: IdeaArtifactName): string[] {
-  return issues.filter((issue) => issue.artifact === artifact).map((issue) => issue.message);
+function artifactIssueNotes(
+  issues: readonly ValidationIssue[],
+  artifact: IdeaArtifactName,
+  severity?: ValidationIssue["severity"],
+): string[] {
+  return issues
+    .filter((issue) => issue.artifact === artifact && (severity === undefined || issue.severity === severity))
+    .map((issue) => issue.message);
 }
 
-async function artifactNotes(stageRoot: string, artifact: IdeaArtifactName): Promise<string[]> {
+async function artifactNotes(stageRoot: string, artifact: IdeaArtifactName, stage: Stage): Promise<string[]> {
   const artifactPath = path.join(stageRoot, `${artifact}.md`);
   if (!(await pathExists(artifactPath))) {
     return ["missing artifact"];
@@ -65,6 +71,10 @@ async function artifactNotes(stageRoot: string, artifact: IdeaArtifactName): Pro
     const frontmatter = ArtifactFrontmatterSchema.safeParse(document.data);
     if (!frontmatter.success || frontmatter.data.artifact !== artifact) {
       return ["invalid artifact frontmatter"];
+    }
+
+    if (frontmatter.data.stage !== stage) {
+      return [`stage mismatch: declares ${frontmatter.data.stage}, expected ${stage}`];
     }
 
     const notes: string[] = [];
@@ -95,14 +105,15 @@ async function buildArtifactChecklist(
 
   return await Promise.all(
     artifacts.map(async (artifact) => {
-      const blockingNotes = artifactIssueNotes(issues, artifact);
-      const notes = blockingNotes.length > 0 ? blockingNotes : await artifactNotes(stageRoot, artifact);
+      const errorNotes = artifactIssueNotes(issues, artifact, "error");
+      const allIssueNotes = artifactIssueNotes(issues, artifact);
+      const notes = allIssueNotes.length > 0 ? allIssueNotes : await artifactNotes(stageRoot, artifact, stage);
 
       return {
         artifact,
         required: requiredArtifacts.has(artifact),
         ok: notes.length === 0,
-        blocking: blockingNotes.length > 0,
+        blocking: errorNotes.length > 0,
         notes,
       };
     }),

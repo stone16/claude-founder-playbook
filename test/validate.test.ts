@@ -52,7 +52,7 @@ async function writeState(
 async function writeIdeaArtifact(
   workspace: string,
   artifact: string,
-  overrides: { status?: "draft" | "complete"; body?: string } = {},
+  overrides: { status?: "draft" | "complete"; body?: string; stage?: string; evidence?: unknown[] } = {},
 ): Promise<void> {
   const stageRoot = path.join(workspace, slug, "idea");
   await mkdir(stageRoot, { recursive: true });
@@ -60,10 +60,10 @@ async function writeIdeaArtifact(
     path.join(stageRoot, `${artifact}.md`),
     matter.stringify(overrides.body ?? `# ${artifact}\n\nSpecific customer evidence with concrete details.\n`, {
       artifact,
-      stage: "idea",
+      stage: overrides.stage ?? "idea",
       status: overrides.status ?? "complete",
       updated: now,
-      evidence: [],
+      evidence: overrides.evidence ?? [],
     }),
     "utf8",
   );
@@ -135,6 +135,53 @@ describe("validateStage — idea regression pin", () => {
     expect(result.issues).toEqual([]);
     expect(result.stage).toBe("idea");
     expect(result.ideaSlug).toBe(slug);
+  });
+
+  it("rejects a required artifact whose frontmatter stage does not match the checked stage", async () => {
+    const workspace = await makeWorkspace();
+    await populatePassingIdea(workspace);
+    // An idea-stage required artifact that falsely declares a different stage.
+    await writeIdeaArtifact(workspace, "problem-hypothesis", { stage: "mvp" });
+
+    const result = await validateStage(workspace, slug, "idea");
+
+    expect(result.ok).toBe(false);
+    const mismatch = result.issues.find(
+      (issue) => issue.artifact === "problem-hypothesis" && issue.code === "INVALID_ARTIFACT",
+    );
+    expect(mismatch).toBeDefined();
+    expect(mismatch?.message).toContain("stage");
+    expect(mismatch?.severity).toBe("error");
+  });
+
+  it("treats evidence entries with only empty/whitespace claims as claimless (warning, non-blocking)", async () => {
+    const workspace = await makeWorkspace();
+    await populatePassingIdea(workspace);
+    await writeIdeaArtifact(workspace, "problem-hypothesis", {
+      evidence: [{ label: "https://example.com", claims: ["", "   "] }],
+    });
+
+    const result = await validateStage(workspace, slug, "idea");
+
+    expect(result.ok).toBe(true); // warning does not block
+    const warning = result.issues.find(
+      (issue) => issue.artifact === "problem-hypothesis" && issue.code === "EVIDENCE_NO_CLAIMS",
+    );
+    expect(warning).toBeDefined();
+    expect(warning?.severity).toBe("warning");
+  });
+
+  it("does not warn when an evidence entry carries a meaningful claim", async () => {
+    const workspace = await makeWorkspace();
+    await populatePassingIdea(workspace);
+    await writeIdeaArtifact(workspace, "problem-hypothesis", {
+      evidence: [{ label: "https://example.com", claims: ["8 of 12 interviewees would pay"] }],
+    });
+
+    const result = await validateStage(workspace, slug, "idea");
+
+    expect(result.ok).toBe(true);
+    expect(result.issues.some((issue) => issue.code === "EVIDENCE_NO_CLAIMS")).toBe(false);
   });
 
   it("reports each missing required artifact and the missing gate when nothing is populated", async () => {

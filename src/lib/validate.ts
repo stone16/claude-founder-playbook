@@ -110,6 +110,7 @@ function evidenceArtifactPath(
 async function validateArtifact(
   stageRoot: string,
   artifact: IdeaArtifactName,
+  stage: Stage,
   issues: ValidationIssue[],
 ): Promise<void> {
   const artifactPath = path.join(stageRoot, `${artifact}.md`);
@@ -148,6 +149,16 @@ async function validateArtifact(
     return;
   }
 
+  if (frontmatter.data.stage !== stage) {
+    issues.push({
+      code: "INVALID_ARTIFACT",
+      artifact,
+      severity: "error",
+      message: `INVALID_ARTIFACT: ${artifact} declares stage ${frontmatter.data.stage} but is under the ${stage} stage`,
+    });
+    return;
+  }
+
   if (frontmatter.data.status !== "complete") {
     issues.push({
       code: "INCOMPLETE_ARTIFACT",
@@ -174,7 +185,10 @@ async function validateArtifact(
   }
 
   const evidence = frontmatter.data.evidence;
-  if (evidence.length > 0 && evidence.every((entry) => entry.claims.length === 0)) {
+  const hasMeaningfulClaim = evidence.some((entry) =>
+    entry.claims.some((claim) => claim.trim().length > 0),
+  );
+  if (evidence.length > 0 && !hasMeaningfulClaim) {
     issues.push({
       code: "EVIDENCE_NO_CLAIMS",
       artifact,
@@ -338,7 +352,7 @@ export async function validateStage(
   }
 
   for (const artifact of definition.required) {
-    await validateArtifact(stageRoot, artifact, issues);
+    await validateArtifact(stageRoot, artifact, stage, issues);
   }
 
   if (definition.gateCriteria.length === 0) {
