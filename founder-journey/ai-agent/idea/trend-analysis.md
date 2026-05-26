@@ -4,10 +4,14 @@ stage: idea
 status: complete
 updated: "2026-05-26T10:00:00.000Z"
 evidence:
-  - "https://www.anthropic.com/engineering/building-effective-agents"
-  - "https://openai.com/index/introducing-the-operator/"
-  - "https://www.gartner.com/en/articles/ai-agents"
-  - "https://github.com/e2b-dev/awesome-ai-agents"
+  - label: "https://www.anthropic.com/engineering/building-effective-agents"
+    claims: []
+  - label: "https://openai.com/index/introducing-the-operator/"
+    claims: []
+  - label: "https://www.gartner.com/en/articles/ai-agents"
+    claims: []
+  - label: "https://github.com/e2b-dev/awesome-ai-agents"
+    claims: []
 ---
 
 # Trend Analysis

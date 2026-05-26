@@ -4,8 +4,10 @@ stage: idea
 status: complete
 updated: "2026-05-26T10:00:00.000Z"
 evidence:
-  - "https://www.anthropic.com/engineering/building-effective-agents"
-  - "https://docs.crewai.com/introduction"
+  - label: "https://www.anthropic.com/engineering/building-effective-agents"
+    claims: []
+  - label: "https://docs.crewai.com/introduction"
+    claims: []
 ---
 
 # Solution Concept

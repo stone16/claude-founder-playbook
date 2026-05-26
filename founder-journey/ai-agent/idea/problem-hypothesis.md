@@ -4,8 +4,10 @@ stage: idea
 status: complete
 updated: "2026-05-26T10:00:00.000Z"
 evidence:
-  - "https://survey.stackoverflow.co/2024/ai"
-  - "https://www.gartner.com/en/articles/ai-agents"
+  - label: "https://survey.stackoverflow.co/2024/ai"
+    claims: []
+  - label: "https://www.gartner.com/en/articles/ai-agents"
+    claims: []
 ---
 
 # Problem Hypothesis

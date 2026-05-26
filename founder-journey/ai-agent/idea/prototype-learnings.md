@@ -4,7 +4,8 @@ stage: idea
 status: complete
 updated: "2026-05-26T10:00:00.000Z"
 evidence:
-  - interview-synthesis.md
+  - label: interview-synthesis.md
+    claims: []
 ---
 
 # Prototype Learnings

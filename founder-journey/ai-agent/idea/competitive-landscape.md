@@ -4,12 +4,18 @@ stage: idea
 status: complete
 updated: "2026-05-26T10:00:00.000Z"
 evidence:
-  - "https://langchain.com"
-  - "https://microsoft.github.io/autogen/"
-  - "https://www.crewai.com"
-  - "https://www.anthropic.com/engineering/building-effective-agents"
-  - "https://www.promptingguide.ai"
-  - "https://www.galileo.ai"
+  - label: "https://langchain.com"
+    claims: []
+  - label: "https://microsoft.github.io/autogen/"
+    claims: []
+  - label: "https://www.crewai.com"
+    claims: []
+  - label: "https://www.anthropic.com/engineering/building-effective-agents"
+    claims: []
+  - label: "https://www.promptingguide.ai"
+    claims: []
+  - label: "https://www.galileo.ai"
+    claims: []
   - "https://docs.smith.langchain.com"
   - "https://wandb.ai"
 ---

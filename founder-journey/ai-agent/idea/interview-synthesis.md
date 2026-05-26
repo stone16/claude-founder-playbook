@@ -4,8 +4,10 @@ stage: idea
 status: complete
 updated: "2026-05-26T10:00:00.000Z"
 evidence:
-  - "https://www.gartner.com/en/newsroom/press-releases/2024-01-31-gartner-says-more-than-80-percent-of-enterprises-will-have-used-generative-ai-by-2026"
-  - "https://survey.stackoverflow.co/2024/ai"
+  - label: "https://www.gartner.com/en/newsroom/press-releases/2024-01-31-gartner-says-more-than-80-percent-of-enterprises-will-have-used-generative-ai-by-2026"
+    claims: []
+  - label: "https://survey.stackoverflow.co/2024/ai"
+    claims: []
 ---
 
 # Interview Synthesis
