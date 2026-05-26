@@ -108,6 +108,32 @@ describe("founder status", () => {
     expect(output).not.toContain("Blocking:");
   });
 
+  it("reports a non-numeric gate and a no-artifacts note for an advanced empty-gate stage", async () => {
+    const workspace = await createWorkspace("founder-status-mvp-");
+    await main(["new", "Contract Review Tool", "--workspace", workspace]);
+    expect(
+      await main([
+        "advance",
+        "contract-review-tool",
+        "--override",
+        "Founder accepts the risk to run a concierge MVP.",
+        "--workspace",
+        workspace,
+      ]),
+    ).toBe(0);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+    expect(await main(["status", "contract-review-tool", "--workspace", workspace])).toBe(0);
+
+    const output = consoleOutput(log);
+    expect(output).toContain("Stage: mvp");
+    expect(output).toContain("Gate: no gate");
+    expect(output).toContain("(no required artifacts for this stage yet)");
+    expect(output).not.toContain("n/a");
+    expect(output).not.toContain("NO_GATE_DEFINED");
+    expect(output).not.toContain("Blocking:");
+  });
+
   it("errors clearly when no idea exists and no idea argument is provided", async () => {
     const workspace = await createWorkspace("founder-status-missing-");
     const error = vi.spyOn(console, "error").mockImplementation(() => undefined);

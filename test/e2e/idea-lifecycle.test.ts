@@ -179,7 +179,7 @@ describe("Idea-stage lifecycle e2e", () => {
 
     const passingList = await runFounder(["list", "--workspace", workspace]);
     expect(passingList).toMatchObject({ code: 0 });
-    expect(passingList.stdout).toContain("sample-idea  mvp  n/a");
+    expect(passingList.stdout).toContain("sample-idea  mvp  no gate");
     expect(passingList.stdout).toContain("met-gate-idea  idea  3/3 ✓");
 
     const metGateAdvance = await runFounder(["advance", "met-gate-idea", "--workspace", workspace]);
