@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { StageSchema } from "./state.js";
+
 export const IdeaArtifactNameSchema = z.enum([
   "problem-hypothesis",
   "competitive-landscape",
@@ -45,7 +47,7 @@ export const ArtifactUpdatedSchema = z.string().refine(
 
 export const ArtifactFrontmatterSchema = z.object({
   artifact: IdeaArtifactNameSchema,
-  stage: z.literal("idea"),
+  stage: StageSchema,
   status: ArtifactStatusSchema,
   updated: ArtifactUpdatedSchema,
   evidence: z.array(z.string()),
