@@ -195,6 +195,31 @@ describe("founder check", () => {
     expect(console.log).toHaveBeenCalledWith(expect.stringContaining("CHECK PASSED"));
   });
 
+  it("still exits 0 when an artifact's evidence entries exist but all lack claims (warning tier)", async () => {
+    const workspace = await createScaffoldedIdea();
+    await populatePassingIdea(workspace);
+    // Overwrite one required artifact with claimless evidence entries — a warning, not a blocker.
+    await writeFile(
+      path.join(ideaPath(workspace), "problem-hypothesis.md"),
+      matter.stringify("# problem-hypothesis\n\nSpecific customer evidence with concrete details.\n", {
+        artifact: "problem-hypothesis",
+        stage: "idea",
+        status: "complete",
+        updated: now,
+        evidence: [
+          { label: "Interview notes", claims: [] },
+          { label: "Survey export", claims: [] },
+        ],
+      }),
+      "utf8",
+    );
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+    expect(await main(["check", "contract-review-tool", "--workspace", workspace])).toBe(0);
+
+    expect(console.log).toHaveBeenCalledWith(expect.stringContaining("CHECK PASSED"));
+  });
+
   it("surfaces corrupt artifact frontmatter as a typed validation error", async () => {
     const workspace = await createScaffoldedIdea();
     await populatePassingIdea(workspace);

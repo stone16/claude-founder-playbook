@@ -494,6 +494,93 @@ describe("validateStage — evidenceTargets derived per-call from the registry",
   });
 });
 
+describe("validateStage — non-blocking warning tier", () => {
+  async function writeArtifactWithEvidence(
+    workspace: string,
+    artifact: string,
+    evidence: { label: string; url?: string; claims: string[] }[],
+  ): Promise<void> {
+    const stageRoot = path.join(workspace, slug, "idea");
+    await mkdir(stageRoot, { recursive: true });
+    await writeFile(
+      path.join(stageRoot, `${artifact}.md`),
+      matter.stringify(`# ${artifact}\n\nSpecific customer evidence with concrete details.\n`, {
+        artifact,
+        stage: "idea",
+        status: "complete",
+        updated: now,
+        evidence,
+      }),
+      "utf8",
+    );
+  }
+
+  it("emits PLACEHOLDER_WARNING (warning) for a partial-placeholder body and stays ok: true", async () => {
+    const workspace = await makeWorkspace();
+    await populatePassingIdea(workspace);
+    await writeIdeaArtifact(workspace, "problem-hypothesis", {
+      body: "# problem-hypothesis\n\nReal concrete finding from interviews.\n\nTODO: add more detail.\n",
+    });
+
+    const result = await validateStage(workspace, slug, "idea");
+
+    expect(result.ok).toBe(true);
+    expect(result.issues).toContainEqual(
+      expect.objectContaining({
+        code: "PLACEHOLDER_WARNING",
+        artifact: "problem-hypothesis",
+        severity: "warning",
+      }),
+    );
+    expect(result.issues.some((issue) => issue.code === "PLACEHOLDER_ARTIFACT")).toBe(false);
+  });
+
+  it("emits EVIDENCE_NO_CLAIMS (warning) when evidence entries exist but all lack claims, staying ok: true", async () => {
+    const workspace = await makeWorkspace();
+    await populatePassingIdea(workspace);
+    await writeArtifactWithEvidence(workspace, "problem-hypothesis", [
+      { label: "User interview notes", claims: [] },
+      { label: "Survey export", url: "https://example.com/survey", claims: [] },
+    ]);
+
+    const result = await validateStage(workspace, slug, "idea");
+
+    expect(result.ok).toBe(true);
+    expect(result.issues).toContainEqual(
+      expect.objectContaining({
+        code: "EVIDENCE_NO_CLAIMS",
+        artifact: "problem-hypothesis",
+        severity: "warning",
+      }),
+    );
+  });
+
+  it("does NOT emit EVIDENCE_NO_CLAIMS when at least one evidence entry carries a claim", async () => {
+    const workspace = await makeWorkspace();
+    await populatePassingIdea(workspace);
+    await writeArtifactWithEvidence(workspace, "problem-hypothesis", [
+      { label: "User interview notes", claims: ["3 of 5 users hit the problem weekly"] },
+      { label: "Survey export", claims: [] },
+    ]);
+
+    const result = await validateStage(workspace, slug, "idea");
+
+    expect(result.ok).toBe(true);
+    expect(result.issues.some((issue) => issue.code === "EVIDENCE_NO_CLAIMS")).toBe(false);
+  });
+
+  it("does NOT emit EVIDENCE_NO_CLAIMS for an empty evidence array (regression guard for the toEqual([]) pins)", async () => {
+    const workspace = await makeWorkspace();
+    await populatePassingIdea(workspace);
+    await writeArtifactWithEvidence(workspace, "problem-hypothesis", []);
+
+    const result = await validateStage(workspace, slug, "idea");
+
+    expect(result.ok).toBe(true);
+    expect(result.issues).toEqual([]);
+  });
+});
+
 describe("hasBlockingIssue / ok ignores warnings", () => {
   it("treats a list with an error-severity issue as blocking", () => {
     const issues: ValidationIssue[] = [

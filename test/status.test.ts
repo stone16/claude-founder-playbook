@@ -6,6 +6,7 @@ import matter from "gray-matter";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { main } from "../src/cli.js";
+import { type IdeaReport, renderStatusReport } from "../src/lib/report.js";
 import { stageManifest } from "../src/stages/idea.js";
 
 const now = "2026-05-25T00:00:00.000Z";
@@ -132,6 +133,49 @@ describe("founder status", () => {
     expect(output).not.toContain("n/a");
     expect(output).not.toContain("NO_GATE_DEFINED");
     expect(output).not.toContain("Blocking:");
+  });
+
+  it("renders warning-severity issues in a Warnings section distinct from Blocking", () => {
+    const report: IdeaReport = {
+      ideaSlug: "contract-review-tool",
+      stage: "idea",
+      gate: { passed: 0, total: 3, ok: false, blockers: [], token: "0/3 ✗" },
+      artifacts: [],
+      blockingIssues: [
+        {
+          code: "MISSING_ARTIFACT",
+          artifact: "interview-synthesis",
+          severity: "error",
+          message: "interview-synthesis: missing required artifact",
+        },
+        {
+          code: "PLACEHOLDER_WARNING",
+          artifact: "problem-hypothesis",
+          severity: "warning",
+          message: "problem-hypothesis: body is partially placeholder content",
+        },
+        {
+          code: "EVIDENCE_NO_CLAIMS",
+          artifact: "problem-hypothesis",
+          severity: "warning",
+          message: "problem-hypothesis: evidence entries have no claims",
+        },
+      ],
+    };
+
+    const output = renderStatusReport(report);
+
+    expect(output).toContain("Blocking:");
+    expect(output).toContain("Warnings:");
+    expect(output).toContain("interview-synthesis: missing required artifact");
+    expect(output).toContain("problem-hypothesis: body is partially placeholder content");
+    expect(output).toContain("problem-hypothesis: evidence entries have no claims");
+
+    // Warnings must not leak into the Blocking section.
+    const blockingSection = output.slice(output.indexOf("Blocking:"), output.indexOf("Warnings:"));
+    expect(blockingSection).toContain("interview-synthesis: missing required artifact");
+    expect(blockingSection).not.toContain("partially placeholder");
+    expect(blockingSection).not.toContain("evidence entries have no claims");
   });
 
   it("errors clearly when no idea exists and no idea argument is provided", async () => {
