@@ -5,14 +5,13 @@ status: complete
 updated: "2026-05-26T10:00:00.000Z"
 evidence:
   - interview-synthesis.md
-  - "https://www.figma.com"
 ---
 
 # Prototype Learnings
 
 ## Prototype
 
-A minimal knowledge base prototype was built over 2 weeks: a static site with 5 architecture pattern pages and a manual framework comparison table covering 12 frameworks. The prototype was designed in Figma and rendered as a clickable HTML prototype. Shared with 8 interviewees from the initial discovery round for feedback. Not a working product, but a concrete artifact to elicit reactions. Screenshots and test session notes are maintained separately; the specific prototype URL is internal and referenced via the evidence link.
+A minimal knowledge base prototype was built over 2 weeks: a static site with 5 architecture pattern pages and a manual framework comparison table covering 12 frameworks. The prototype was designed in Figma and rendered as a clickable HTML prototype. Shared with 8 interviewees from the initial discovery round for feedback. Not a working product, but a concrete artifact to elicit reactions. Screenshots and test session notes are maintained separately as internal artifacts; contact the research lead for access.
 
 ## Observations
 
