@@ -109,6 +109,35 @@ describe("founder status", () => {
     expect(output).not.toContain("Blocking:");
   });
 
+  it("renders a warning-only required artifact as passing (✓), not failing or blocking", async () => {
+    const workspace = await createWorkspace("founder-status-warn-");
+    await main(["new", "Contract Review Tool", "--workspace", workspace]);
+    await populatePassingIdea(workspace);
+    // A complete, non-placeholder required artifact whose only issue is a claimless-evidence WARNING.
+    await writeFile(
+      path.join(ideaPath(workspace), "problem-hypothesis.md"),
+      matter.stringify("# problem-hypothesis\n\nSpecific customer evidence with concrete details.\n", {
+        artifact: "problem-hypothesis",
+        stage: "idea",
+        status: "complete",
+        updated: now,
+        evidence: [{ label: "https://example.com", claims: [] }],
+      }),
+      "utf8",
+    );
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+    expect(await main(["status", "contract-review-tool", "--workspace", workspace])).toBe(0);
+
+    const output = consoleOutput(log);
+    // Warning is advisory: the artifact still passes (✓) and is never marked blocking.
+    expect(output).toContain("✓ problem-hypothesis.md");
+    expect(output).not.toContain("✗ problem-hypothesis.md");
+    expect(output).not.toContain("problem-hypothesis.md (required blocking)");
+    expect(output).not.toContain("Blocking:");
+    expect(output).toContain("Gate: 3/3 ✓");
+  });
+
   it("reports a non-numeric gate and a no-artifacts note for an advanced empty-gate stage", async () => {
     const workspace = await createWorkspace("founder-status-mvp-");
     await main(["new", "Contract Review Tool", "--workspace", workspace]);

@@ -106,13 +106,16 @@ async function buildArtifactChecklist(
   return await Promise.all(
     artifacts.map(async (artifact) => {
       const errorNotes = artifactIssueNotes(issues, artifact, "error");
-      const allIssueNotes = artifactIssueNotes(issues, artifact);
-      const notes = allIssueNotes.length > 0 ? allIssueNotes : await artifactNotes(stageRoot, artifact, stage);
+      const warningNotes = artifactIssueNotes(issues, artifact, "warning");
+      // Fall back to a direct file check only when the validator reported no issues for this artifact.
+      const fileNotes = errorNotes.length + warningNotes.length > 0 ? [] : await artifactNotes(stageRoot, artifact, stage);
+      const notes = [...errorNotes, ...warningNotes, ...fileNotes];
 
       return {
         artifact,
         required: requiredArtifacts.has(artifact),
-        ok: notes.length === 0,
+        // Warning-severity issues are advisory: they show as notes but do not fail (✗) or block the artifact.
+        ok: errorNotes.length === 0 && fileNotes.length === 0,
         blocking: errorNotes.length > 0,
         notes,
       };
