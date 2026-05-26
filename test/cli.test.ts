@@ -123,7 +123,8 @@ describe("main global --workspace flag", () => {
   it("throws WorkspacePathError when --workspace has no value before the verb", async () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-    expect(await main(["--workspace", "status"])).toBe(1);
+    // The next token is another flag, so --workspace has no value of its own.
+    expect(await main(["--workspace", "--help"])).toBe(1);
     expect(error).toHaveBeenCalledWith(expect.stringContaining("MISSING_WORKSPACE_VALUE"));
   });
 
