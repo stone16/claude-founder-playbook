@@ -26,6 +26,8 @@ Core interview protocol (30 minutes):
 3. What is something you believed 6 months ago about building agents that turned out to be wrong?
 4. If you could hit a button and get one comprehensive resource about AI agents, what would it contain that does not exist today?
 5. Have you ever contributed knowledge back to the community (blog post, talk, open source)? What motivated you? What prevented you from doing more?
+6. (Pricing) If your team used a knowledge base like this, where would the budget come from — individual expense, team tools budget, or central engineering L&D? What approval would be needed?
+7. (Distribution) How do you currently discover new AI engineering resources? Which channels (newsletters, X/Twitter, Slack communities, conference talks, direct colleague recommendations) are most likely to bring something like this to your attention?
 
 ## Recruiting Plan
 

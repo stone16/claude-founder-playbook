@@ -5,6 +5,8 @@ status: complete
 updated: "2026-05-26T10:00:00.000Z"
 evidence:
   - "https://www.gartner.com/en/newsroom/press-releases/2024-01-31-gartner-says-more-than-80-percent-of-enterprises-will-have-used-generative-ai-by-2026"
+  - "https://survey.stackoverflow.co/2024/ai"
+  - "https://www.marketsandmarkets.com/Market-Reports/ai-ml-tools-market.html"
 ---
 
 # Market Sizing

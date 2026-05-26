@@ -7,6 +7,11 @@ evidence:
   - "https://langchain.com"
   - "https://microsoft.github.io/autogen/"
   - "https://www.crewai.com"
+  - "https://www.anthropic.com/engineering/building-effective-agents"
+  - "https://www.promptingguide.ai"
+  - "https://www.galileo.ai"
+  - "https://docs.smith.langchain.com"
+  - "https://wandb.ai"
 ---
 
 # Competitive Landscape
