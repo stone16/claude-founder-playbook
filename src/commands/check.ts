@@ -1,6 +1,9 @@
+import path from "node:path";
+
 import { readActiveIdea } from "../lib/active.js";
 import { positionalArgs } from "../lib/args.js";
-import { validateIdeaStage } from "../lib/validate.js";
+import { readStateJson } from "../lib/state.js";
+import { validateStage } from "../lib/validate.js";
 
 export class MissingIdeaSelectionError extends Error {
   readonly code = "MISSING_IDEA_SELECTION";
@@ -19,7 +22,9 @@ export async function checkIdea(workspaceRoot: string, args: readonly string[]):
     throw new MissingIdeaSelectionError();
   }
 
-  const result = await validateIdeaStage(workspaceRoot, ideaSlug, "idea");
+  const statePath = path.join(workspaceRoot, ideaSlug, "state.json");
+  const state = await readStateJson(statePath);
+  const result = await validateStage(workspaceRoot, ideaSlug, state.currentStage);
 
   if (result.ok) {
     console.log(`CHECK PASSED: ${result.ideaSlug} ${result.stage}`);

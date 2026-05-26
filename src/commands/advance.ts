@@ -1,4 +1,4 @@
-import { mkdir } from "node:fs/promises";
+import { copyFile, mkdir, readdir } from "node:fs/promises";
 import path from "node:path";
 
 import { readActiveIdea } from "../lib/active.js";
@@ -6,7 +6,9 @@ import { positionalArgs } from "../lib/args.js";
 import { overrideArtifactName, writeOverrideArtifact } from "../lib/override.js";
 import { readStateJson, writeStateJson } from "../lib/state.js";
 import { advanceStage } from "../lib/transition.js";
-import { validateIdeaStage } from "../lib/validate.js";
+import { validateStage } from "../lib/validate.js";
+import { type Stage } from "../schemas/state.js";
+import { type StageDefinition, stageRegistry } from "../stages/registry.js";
 
 export class MissingAdvanceIdeaError extends Error {
   readonly code = "MISSING_IDEA_SELECTION";
@@ -67,11 +69,30 @@ function parseAdvanceArgs(args: readonly string[]): AdvanceArgs {
   };
 }
 
-async function createStageDirectory(ideaRoot: string, stage: string): Promise<void> {
-  await mkdir(path.join(ideaRoot, stage), { recursive: true });
+async function createStageDirectory(
+  ideaRoot: string,
+  stage: string,
+  definition: StageDefinition,
+): Promise<void> {
+  const stageRoot = path.join(ideaRoot, stage);
+  await mkdir(stageRoot, { recursive: true });
+
+  if (definition.templateDir === undefined) {
+    return;
+  }
+
+  for (const entry of await readdir(definition.templateDir, { withFileTypes: true })) {
+    if (entry.isFile()) {
+      await copyFile(path.join(definition.templateDir, entry.name), path.join(stageRoot, entry.name));
+    }
+  }
 }
 
-export async function advanceIdea(workspaceRoot: string, args: readonly string[]): Promise<number> {
+export async function advanceIdea(
+  workspaceRoot: string,
+  args: readonly string[],
+  registry: Record<Stage, StageDefinition> = stageRegistry,
+): Promise<number> {
   const parsed = parseAdvanceArgs(args);
   const ideaSlug = parsed.ideaSlug ?? (await readActiveIdea(workspaceRoot));
 
@@ -83,7 +104,7 @@ export async function advanceIdea(workspaceRoot: string, args: readonly string[]
   const statePath = path.join(ideaRoot, "state.json");
   const state = await readStateJson(statePath);
   const currentStage = state.currentStage;
-  const validation = await validateIdeaStage(workspaceRoot, ideaSlug, currentStage);
+  const validation = await validateStage(workspaceRoot, ideaSlug, currentStage, registry);
 
   if (!validation.ok && parsed.overrideReason === undefined) {
     for (const issue of validation.issues) {
@@ -113,7 +134,7 @@ export async function advanceIdea(workspaceRoot: string, args: readonly string[]
     await writeOverrideArtifact(ideaRoot, currentStage, parsed.overrideReason, advancedAt);
   }
 
-  await createStageDirectory(ideaRoot, nextState.currentStage);
+  await createStageDirectory(ideaRoot, nextState.currentStage, registry[nextState.currentStage]);
   await writeStateJson(statePath, nextState);
   console.log(`ADVANCED: ${ideaSlug} ${currentStage} -> ${nextState.currentStage}`);
   return 0;
