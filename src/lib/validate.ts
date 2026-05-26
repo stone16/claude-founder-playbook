@@ -9,12 +9,14 @@ import { GateSchema } from "../schemas/gate.js";
 import { type Stage } from "../schemas/state.js";
 import { type StageDefinition, stageRegistry } from "../stages/registry.js";
 import { readStateJson } from "./state.js";
-import { isPlaceholderBody } from "./placeholder.js";
+import { hasPartialPlaceholderBody, isPlaceholderBody } from "./placeholder.js";
 
 export type ValidationIssueCode =
   | "MISSING_ARTIFACT"
   | "INCOMPLETE_ARTIFACT"
   | "PLACEHOLDER_ARTIFACT"
+  | "PLACEHOLDER_WARNING"
+  | "EVIDENCE_NO_CLAIMS"
   | "INVALID_ARTIFACT"
   | "MISSING_GATE"
   | "INVALID_GATE"
@@ -161,6 +163,23 @@ async function validateArtifact(
       artifact,
       severity: "error",
       message: `${artifact}: body is placeholder content`,
+    });
+  } else if (hasPartialPlaceholderBody(document.content)) {
+    issues.push({
+      code: "PLACEHOLDER_WARNING",
+      artifact,
+      severity: "warning",
+      message: `${artifact}: body is partially placeholder content`,
+    });
+  }
+
+  const evidence = frontmatter.data.evidence;
+  if (evidence.length > 0 && evidence.every((entry) => entry.claims.length === 0)) {
+    issues.push({
+      code: "EVIDENCE_NO_CLAIMS",
+      artifact,
+      severity: "warning",
+      message: `${artifact}: evidence entries have no claims`,
     });
   }
 }

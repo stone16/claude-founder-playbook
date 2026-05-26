@@ -186,11 +186,20 @@ export function renderStatusReport(report: IdeaReport): string {
   }
 
   const blocking = report.blockingIssues.filter(
-    (issue) => issue.code !== "INVALID_STATE" && issue.code !== "NO_GATE_DEFINED",
+    (issue) =>
+      issue.severity === "error" && issue.code !== "INVALID_STATE" && issue.code !== "NO_GATE_DEFINED",
   );
   if (blocking.length > 0) {
     lines.push("", "Blocking:");
     for (const issue of blocking) {
+      lines.push(`- ${issue.message}`);
+    }
+  }
+
+  const warnings = report.blockingIssues.filter((issue) => issue.severity === "warning");
+  if (warnings.length > 0) {
+    lines.push("", "Warnings:");
+    for (const issue of warnings) {
       lines.push(`- ${issue.message}`);
     }
   }
