@@ -16,8 +16,10 @@ evidence:
     claims: []
   - label: "https://www.galileo.ai"
     claims: []
-  - "https://docs.smith.langchain.com"
-  - "https://wandb.ai"
+  - label: "https://docs.smith.langchain.com"
+    claims: []
+  - label: "https://wandb.ai"
+    claims: []
 ---
 
 # Competitive Landscape
