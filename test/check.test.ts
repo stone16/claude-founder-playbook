@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -168,19 +168,21 @@ describe("founder check", () => {
     expect(errors).toContain("missing artifact");
   });
 
-  it("fails when state.json currentStage disagrees with the checked stage", async () => {
+  it("checks the stage recorded in state.json and reports NO_GATE_DEFINED for an ungated stage", async () => {
     const workspace = await createScaffoldedIdea();
     await populatePassingIdea(workspace);
-    const statePath = path.join(workspace, "contract-review-tool", "state.json");
-    const state = JSON.parse(await readFile(statePath, "utf8")) as Record<string, unknown>;
-    await writeFile(statePath, `${JSON.stringify({ ...state, currentStage: "mvp" }, null, 2)}\n`, "utf8");
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+    // Drive the real flow to mvp so currentStage === "mvp" AND mvp/ exists on disk.
+    expect(await main(["advance", "contract-review-tool", "--workspace", workspace])).toBe(0);
     vi.spyOn(console, "error").mockImplementation(() => undefined);
 
     expect(await main(["check", "contract-review-tool", "--workspace", workspace])).toBe(1);
 
-    expect(consoleErrors()).toContain("currentStage");
-    expect(consoleErrors()).toContain("idea");
-    expect(consoleErrors()).toContain("mvp");
+    const errors = consoleErrors();
+    expect(errors).toContain("NO_GATE_DEFINED");
+    // The old hardcoded-"idea" mismatch path must not fire: check now reads currentStage.
+    expect(errors).not.toContain("STATE_STAGE_MISMATCH");
+    expect(errors).not.toContain("currentStage is");
   });
 
   it("passes for a populated idea with complete required artifacts and evidenced gate criteria", async () => {
