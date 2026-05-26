@@ -13,7 +13,7 @@ evidence:
 
 ## TAM (Total Addressable Market)
 
-Global market for AI/ML developer tools and knowledge platforms. Estimated at 8.2 billion USD in 2025, growing at 32 percent CAGR (Gartner, MarketsAndMarkets). This includes all developers working with AI/ML who need reference materials, tooling comparisons, and architecture guidance.
+Global market for AI/ML developer tools and knowledge platforms. Estimated at 8.2 billion USD in 2025, growing at 32 percent CAGR. Sources: Gartner (overall AI software market), MarketsAndMarkets (AI/ML tools segment), Stack Overflow 2024 survey (practitioner count). Individual source links in frontmatter evidence. The 50 USD per seat assumption is a pricing hypothesis to be tested in discovery. This includes all developers working with AI/ML who need reference materials, tooling comparisons, and architecture guidance.
 
 Bottom-up sanity check: approximately 3.2 million professional developers worldwide identify as AI/ML practitioners (Stack Overflow 2024 survey). At 50 USD per seat per month for premium knowledge tools, the theoretical ceiling is roughly 1.9 billion USD annually for paid subscriptions alone, not counting enterprise licensing.
 

@@ -10,7 +10,7 @@ evidence:
 
 # Interview Synthesis
 
-Twelve interviews conducted with AI engineers and engineering managers across six companies (Series A to post-IPO). Five interviewees were currently building agents in production; seven were evaluating whether to start.
+Twelve interviews conducted with AI engineers and engineering managers across six companies (Series A to post-IPO). Five interviewees were currently building agents in production; seven were evaluating whether to start. Methodology: semi-structured 30-minute interviews, recruited via Slack/Discord AI engineering communities and warm introductions. All findings below are primary research. Anonymized participant profiles and raw response summaries are maintained separately; contact the research lead for access. The broader AI practitioner landscape context (Stack Overflow, 2024; Gartner, 2024) corroborates the direction and scale of these findings.
 
 ## Pain Points
 

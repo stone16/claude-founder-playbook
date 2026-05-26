@@ -15,10 +15,10 @@ evidence:
 ## Tailwinds
 
 - **Agent adoption is accelerating**: Gartner projects that by 2028, 33 percent of enterprise software applications will include agentic AI, up from less than 1 percent in 2024. Every new agent team is a potential user of the knowledge base.
-- **Framework proliferation creates navigation pain**: The number of agent frameworks grew from roughly 5 in early 2023 to over 50 by mid-2025. More frameworks mean more need for neutral comparison and curation. This trend shows no sign of slowing.
-- **Model capability jumps invalidate old knowledge**: Each major model release (Claude 4, GPT-5, Gemini 2.5) changes what architecture patterns are optimal. Content written 6 months ago may recommend patterns that are now obsolete. This creates a continuous demand for fresh, verified content.
-- **OpenAI Operator and Claude Computer Use legitimize the category**: When major labs release agent products, enterprise adoption accelerates. Each new agent product launch drives search traffic for "how to build AI agents" and related queries.
-- **Rising cost of bad agent architecture**: As more teams deploy agents to production, the cost of architectural mistakes (high latency, runaway costs, prompt injection vulnerabilities) becomes visible. Teams will invest more in getting architecture right the first time.
+- **Framework proliferation creates navigation pain**: The number of agent frameworks grew from roughly 5 in early 2023 to over 50 by mid-2025 (source: awesome-ai-agents curated list on GitHub, which tracks the ecosystem). More frameworks mean more need for neutral comparison and curation. This trend shows no sign of slowing.
+- **Model capability jumps invalidate old knowledge**: Each major model release (Claude 4, GPT-5, Gemini 2.5) changes what architecture patterns are optimal — these are the author's observations from tracking the field; not a formal study. Content written 6 months ago may recommend patterns that are now obsolete. This creates a continuous demand for fresh, verified content.
+- **OpenAI Operator and Claude Computer Use legitimize the category**: When major labs release agent products, enterprise adoption accelerates. Each new agent product launch drives search traffic for "how to build AI agents" and related queries (qualitative observation from monitoring search trends; quantitative search volume data not yet collected).
+- **Rising cost of bad agent architecture**: As more teams deploy agents to production, the cost of architectural mistakes (high latency, runaway costs, prompt injection vulnerabilities) becomes visible. This is a directional hypothesis based on increasing production deployment anecdotes, not a measured trend. Teams will invest more in getting architecture right the first time.
 
 ## Timing Risks
 
