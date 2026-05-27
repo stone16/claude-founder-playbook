@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { StageSchema } from "./state.js";
+
 export const IdeaArtifactNameSchema = z.enum([
   "problem-hypothesis",
   "competitive-landscape",
@@ -43,14 +45,21 @@ export const ArtifactUpdatedSchema = z.string().refine(
   { message: "Expected an ISO-8601 UTC datetime" },
 );
 
-export const ArtifactFrontmatterSchema = z.object({
-  artifact: IdeaArtifactNameSchema,
-  stage: z.literal("idea"),
-  status: ArtifactStatusSchema,
-  updated: ArtifactUpdatedSchema,
-  evidence: z.array(z.string()),
+export const EvidenceEntrySchema = z.object({
+  label: z.string().min(1),
+  url: z.string().optional(),
+  claims: z.array(z.string()),
 });
 
+export const ArtifactFrontmatterSchema = z.object({
+  artifact: IdeaArtifactNameSchema,
+  stage: StageSchema,
+  status: ArtifactStatusSchema,
+  updated: ArtifactUpdatedSchema,
+  evidence: z.array(EvidenceEntrySchema),
+});
+
+export type EvidenceEntry = z.infer<typeof EvidenceEntrySchema>;
 export type IdeaArtifactName = z.infer<typeof IdeaArtifactNameSchema>;
 export type ArtifactStatus = z.infer<typeof ArtifactStatusSchema>;
 export type ArtifactFrontmatter = z.infer<typeof ArtifactFrontmatterSchema>;

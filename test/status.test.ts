@@ -6,6 +6,7 @@ import matter from "gray-matter";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { main } from "../src/cli.js";
+import { type IdeaReport, renderStatusReport } from "../src/lib/report.js";
 import { stageManifest } from "../src/stages/idea.js";
 
 const now = "2026-05-25T00:00:00.000Z";
@@ -106,6 +107,104 @@ describe("founder status", () => {
     expect(output).toContain("Gate: 3/3 ✓");
     expect(output).toContain("✓ problem-hypothesis.md");
     expect(output).not.toContain("Blocking:");
+  });
+
+  it("renders a warning-only required artifact as passing (✓), not failing or blocking", async () => {
+    const workspace = await createWorkspace("founder-status-warn-");
+    await main(["new", "Contract Review Tool", "--workspace", workspace]);
+    await populatePassingIdea(workspace);
+    // A complete, non-placeholder required artifact whose only issue is a claimless-evidence WARNING.
+    await writeFile(
+      path.join(ideaPath(workspace), "problem-hypothesis.md"),
+      matter.stringify("# problem-hypothesis\n\nSpecific customer evidence with concrete details.\n", {
+        artifact: "problem-hypothesis",
+        stage: "idea",
+        status: "complete",
+        updated: now,
+        evidence: [{ label: "https://example.com", claims: [] }],
+      }),
+      "utf8",
+    );
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+    expect(await main(["status", "contract-review-tool", "--workspace", workspace])).toBe(0);
+
+    const output = consoleOutput(log);
+    // Warning is advisory: the artifact still passes (✓) and is never marked blocking.
+    expect(output).toContain("✓ problem-hypothesis.md");
+    expect(output).not.toContain("✗ problem-hypothesis.md");
+    expect(output).not.toContain("problem-hypothesis.md (required blocking)");
+    expect(output).not.toContain("Blocking:");
+    expect(output).toContain("Gate: 3/3 ✓");
+  });
+
+  it("reports a non-numeric gate and a no-artifacts note for an advanced empty-gate stage", async () => {
+    const workspace = await createWorkspace("founder-status-mvp-");
+    await main(["new", "Contract Review Tool", "--workspace", workspace]);
+    expect(
+      await main([
+        "advance",
+        "contract-review-tool",
+        "--override",
+        "Founder accepts the risk to run a concierge MVP.",
+        "--workspace",
+        workspace,
+      ]),
+    ).toBe(0);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+    expect(await main(["status", "contract-review-tool", "--workspace", workspace])).toBe(0);
+
+    const output = consoleOutput(log);
+    expect(output).toContain("Stage: mvp");
+    expect(output).toContain("Gate: no gate");
+    expect(output).toContain("(no required artifacts for this stage yet)");
+    expect(output).not.toContain("n/a");
+    expect(output).not.toContain("NO_GATE_DEFINED");
+    expect(output).not.toContain("Blocking:");
+  });
+
+  it("renders warning-severity issues in a Warnings section distinct from Blocking", () => {
+    const report: IdeaReport = {
+      ideaSlug: "contract-review-tool",
+      stage: "idea",
+      gate: { passed: 0, total: 3, ok: false, blockers: [], token: "0/3 ✗" },
+      artifacts: [],
+      blockingIssues: [
+        {
+          code: "MISSING_ARTIFACT",
+          artifact: "interview-synthesis",
+          severity: "error",
+          message: "interview-synthesis: missing required artifact",
+        },
+        {
+          code: "PLACEHOLDER_WARNING",
+          artifact: "problem-hypothesis",
+          severity: "warning",
+          message: "problem-hypothesis: body is partially placeholder content",
+        },
+        {
+          code: "EVIDENCE_NO_CLAIMS",
+          artifact: "problem-hypothesis",
+          severity: "warning",
+          message: "problem-hypothesis: evidence entries have no claims",
+        },
+      ],
+    };
+
+    const output = renderStatusReport(report);
+
+    expect(output).toContain("Blocking:");
+    expect(output).toContain("Warnings:");
+    expect(output).toContain("interview-synthesis: missing required artifact");
+    expect(output).toContain("problem-hypothesis: body is partially placeholder content");
+    expect(output).toContain("problem-hypothesis: evidence entries have no claims");
+
+    // Warnings must not leak into the Blocking section.
+    const blockingSection = output.slice(output.indexOf("Blocking:"), output.indexOf("Warnings:"));
+    expect(blockingSection).toContain("interview-synthesis: missing required artifact");
+    expect(blockingSection).not.toContain("partially placeholder");
+    expect(blockingSection).not.toContain("evidence entries have no claims");
   });
 
   it("errors clearly when no idea exists and no idea argument is provided", async () => {

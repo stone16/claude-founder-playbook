@@ -8,7 +8,11 @@ import { statusIdea } from "./commands/status.js";
 import { listIdeas } from "./commands/list.js";
 import { advanceIdea } from "./commands/advance.js";
 import { positionalArgs } from "./lib/args.js";
-import { resolveWorkspaceRoot } from "./lib/paths.js";
+import {
+  resolveWorkspaceRoot,
+  WorkspacePathError,
+  type WorkspaceResolutionInput,
+} from "./lib/paths.js";
 
 export function usage(): string {
   const commandList = plannedCommands.join(", ");
@@ -28,17 +32,71 @@ function commandMessage(error: CommandError): string {
   return error.code === undefined ? error.message : `${error.code}: ${error.message}`;
 }
 
-export async function main(argv = process.argv.slice(2)): Promise<number> {
-  const result = routeArgv(argv);
+type GlobalWorkspace = {
+  argv: string[];
+  workspace?: string;
+};
+
+// Pulls the global --workspace flag from anywhere in argv so the verb is found
+// whether the flag precedes or follows it. Only --workspace is removed; every
+// other flag (e.g. --override) is left in place for the command to parse.
+function extractGlobalWorkspace(argv: readonly string[]): GlobalWorkspace {
+  const remaining: string[] = [];
+  let workspace: string | undefined;
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+
+    if (workspace === undefined && arg === "--workspace") {
+      const value = argv[index + 1];
+      if (value === undefined || value.startsWith("--")) {
+        throw new WorkspacePathError("--workspace requires a value");
+      }
+      workspace = value;
+      index += 1;
+      continue;
+    }
+
+    if (workspace === undefined && arg.startsWith("--workspace=")) {
+      workspace = arg.slice("--workspace=".length);
+      continue;
+    }
+
+    remaining.push(arg);
+  }
+
+  return { argv: remaining, workspace };
+}
+
+export async function main(
+  argv = process.argv.slice(2),
+  resolution: WorkspaceResolutionInput = {},
+): Promise<number> {
+  let global: GlobalWorkspace;
+  try {
+    global = extractGlobalWorkspace(argv);
+  } catch (error) {
+    console.error(commandMessage(error as CommandError));
+    return 1;
+  }
+
+  const result = routeArgv(global.argv);
 
   if (result.ok && result.command === "help") {
     console.log(usage());
     return 0;
   }
 
+  // Precedence: an explicit global --workspace beats the injected resolution,
+  // which in turn beats process env/cwd defaults.
+  const resolutionInput: WorkspaceResolutionInput =
+    global.workspace === undefined
+      ? resolution
+      : { ...resolution, argv: ["--workspace", global.workspace] };
+
   if (result.ok) {
     try {
-      const workspaceRoot = resolveWorkspaceRoot({ argv: result.args });
+      const workspaceRoot = resolveWorkspaceRoot(resolutionInput);
 
       if (result.command === "init") {
         await initWorkspace(workspaceRoot);

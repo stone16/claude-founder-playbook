@@ -87,6 +87,30 @@ describe("founder list", () => {
     expect(output).toContain("blocked: enough_signal_to_build");
   });
 
+  it("lists an advanced idea with its real stage and a no-gate token rather than invalid", async () => {
+    const workspace = await createWorkspace("founder-list-advanced-");
+    await main(["new", "Contract Review Tool", "--workspace", workspace]);
+    await main(["new", "Customer Interview Coach", "--workspace", workspace]);
+    expect(
+      await main([
+        "advance",
+        "customer-interview-coach",
+        "--override",
+        "Founder accepts the risk to run a concierge MVP.",
+        "--workspace",
+        workspace,
+      ]),
+    ).toBe(0);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+    expect(await main(["list", "--workspace", workspace])).toBe(0);
+
+    const output = consoleOutput(log);
+    expect(output).toContain("contract-review-tool  idea  0/3 ✗");
+    expect(output).toContain("customer-interview-coach  mvp  no gate");
+    expect(output).not.toContain("customer-interview-coach  invalid");
+  });
+
   it("prints an empty portfolio message when the workspace has no ideas", async () => {
     const workspace = await createWorkspace("founder-list-empty-");
     const log = vi.spyOn(console, "log").mockImplementation(() => undefined);

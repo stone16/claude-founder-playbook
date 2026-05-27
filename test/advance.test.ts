@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdtemp, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -6,8 +6,10 @@ import matter from "gray-matter";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { main } from "../src/cli.js";
+import { advanceIdea } from "../src/commands/advance.js";
 import { type FounderState, StateSchema } from "../src/schemas/state.js";
 import { stageManifest } from "../src/stages/idea.js";
+import { stageRegistry } from "../src/stages/registry.js";
 
 const now = "2026-05-25T00:00:00.000Z";
 
@@ -189,5 +191,79 @@ describe("founder advance", () => {
     expect(await main(["advance", "contract-review-tool", "--workspace", workspace])).toBe(1);
 
     expect(consoleOutput(error)).toContain("INVALID_JSON");
+  });
+
+  async function advanceToMvp(workspace: string): Promise<void> {
+    await populatePassingIdea(workspace);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    expect(await main(["advance", "contract-review-tool", "--workspace", workspace])).toBe(0);
+    log.mockRestore();
+  }
+
+  it("blocks advancing an ungated mvp stage without an override and leaves state.json untouched", async () => {
+    const workspace = await createScaffoldedIdea();
+    await advanceToMvp(workspace);
+    const stateBefore = await readFile(path.join(ideaRoot(workspace), "state.json"), "utf8");
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    expect(await main(["advance", "contract-review-tool", "--workspace", workspace])).toBe(1);
+
+    expect(consoleOutput(error)).toContain("ADVANCE_BLOCKED");
+    expect(consoleOutput(error)).toContain("NO_GATE_DEFINED");
+    await expect(readFile(path.join(ideaRoot(workspace), "state.json"), "utf8")).resolves.toBe(stateBefore);
+    await expect(pathExists(path.join(ideaRoot(workspace), "launch"))).resolves.toBe(false);
+  });
+
+  it("records an override and advances an ungated mvp stage when a reason is provided", async () => {
+    const workspace = await createScaffoldedIdea();
+    await advanceToMvp(workspace);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const reason = "Founder accepts launch risk to ship early";
+
+    expect(await main(["advance", "contract-review-tool", `--override=${reason}`, "--workspace", workspace])).toBe(0);
+
+    const state = await readState(workspace);
+    expect(state.currentStage).toBe("launch");
+    expect(state.overrides).toHaveLength(1);
+    expect(state.overrides[0]).toMatchObject({
+      stage: "mvp",
+      reason,
+      artifact: "OVERRIDE-mvp.md",
+    });
+    await expect(pathExists(path.join(ideaRoot(workspace), "launch"))).resolves.toBe(true);
+    await expect(readFile(path.join(ideaRoot(workspace), "OVERRIDE-mvp.md"), "utf8")).resolves.toContain(reason);
+    expect(consoleOutput(log)).toContain("ADVANCED");
+  });
+
+  it("seeds the target stage directory from the registry templateDir when one is declared", async () => {
+    const workspace = await createScaffoldedIdea();
+    await populatePassingIdea(workspace);
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+    const templateDir = await mkdtemp(path.join(tmpdir(), "founder-template-"));
+    await writeFile(path.join(templateDir, "seed.md"), "# seed\n", "utf8");
+    await writeFile(path.join(templateDir, "GATE.md"), "# gate\n", "utf8");
+    const registry = {
+      ...stageRegistry,
+      mvp: { ...stageRegistry.mvp, templateDir },
+    };
+
+    expect(await advanceIdea(workspace, ["contract-review-tool"], registry)).toBe(0);
+
+    const mvpRoot = path.join(ideaRoot(workspace), "mvp");
+    await expect(readFile(path.join(mvpRoot, "seed.md"), "utf8")).resolves.toContain("# seed");
+    await expect(readFile(path.join(mvpRoot, "GATE.md"), "utf8")).resolves.toContain("# gate");
+  });
+
+  it("creates an empty target stage directory when the registry declares no templateDir", async () => {
+    const workspace = await createScaffoldedIdea();
+    await populatePassingIdea(workspace);
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+    expect(await advanceIdea(workspace, ["contract-review-tool"], stageRegistry)).toBe(0);
+
+    const mvpRoot = path.join(ideaRoot(workspace), "mvp");
+    await expect(pathExists(mvpRoot)).resolves.toBe(true);
+    await expect(readdir(mvpRoot)).resolves.toEqual([]);
   });
 });

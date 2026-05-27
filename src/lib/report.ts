@@ -5,18 +5,12 @@ import matter from "gray-matter";
 
 import { ArtifactFrontmatterSchema, type IdeaArtifactName } from "../schemas/artifacts.js";
 import { type Stage } from "../schemas/state.js";
-import { stageManifest } from "../stages/idea.js";
+import { stageRegistry } from "../stages/registry.js";
 import { isPlaceholderBody } from "./placeholder.js";
 import { readStateJson } from "./state.js";
-import { type ValidationIssue, validateIdeaStage } from "./validate.js";
+import { type ValidationIssue, validateStage } from "./validate.js";
 
-const gateCriteria = [
-  "problem_real_specific",
-  "solution_addresses_actual_problem",
-  "enough_signal_to_build",
-] as const;
-
-type GateCriterion = (typeof gateCriteria)[number];
+const NO_GATE_TOKEN = "no gate";
 
 type ArtifactChecklistItem = {
   artifact: IdeaArtifactName;
@@ -56,11 +50,17 @@ async function pathExists(filePath: string): Promise<boolean> {
   }
 }
 
-function artifactIssueNotes(issues: readonly ValidationIssue[], artifact: IdeaArtifactName): string[] {
-  return issues.filter((issue) => issue.artifact === artifact).map((issue) => issue.message);
+function artifactIssueNotes(
+  issues: readonly ValidationIssue[],
+  artifact: IdeaArtifactName,
+  severity?: ValidationIssue["severity"],
+): string[] {
+  return issues
+    .filter((issue) => issue.artifact === artifact && (severity === undefined || issue.severity === severity))
+    .map((issue) => issue.message);
 }
 
-async function artifactNotes(stageRoot: string, artifact: IdeaArtifactName): Promise<string[]> {
+async function artifactNotes(stageRoot: string, artifact: IdeaArtifactName, stage: Stage): Promise<string[]> {
   const artifactPath = path.join(stageRoot, `${artifact}.md`);
   if (!(await pathExists(artifactPath))) {
     return ["missing artifact"];
@@ -71,6 +71,10 @@ async function artifactNotes(stageRoot: string, artifact: IdeaArtifactName): Pro
     const frontmatter = ArtifactFrontmatterSchema.safeParse(document.data);
     if (!frontmatter.success || frontmatter.data.artifact !== artifact) {
       return ["invalid artifact frontmatter"];
+    }
+
+    if (frontmatter.data.stage !== stage) {
+      return [`stage mismatch: declares ${frontmatter.data.stage}, expected ${stage}`];
     }
 
     const notes: string[] = [];
@@ -94,24 +98,25 @@ async function buildArtifactChecklist(
   stage: Stage,
   issues: readonly ValidationIssue[],
 ): Promise<ArtifactChecklistItem[]> {
-  if (stage !== "idea") {
-    return [];
-  }
-
-  const requiredArtifacts = new Set<IdeaArtifactName>(stageManifest.idea.required);
-  const artifacts = [...stageManifest.idea.required, ...stageManifest.idea.recommended];
+  const definition = stageRegistry[stage];
+  const requiredArtifacts = new Set<IdeaArtifactName>(definition.required);
+  const artifacts = [...definition.required, ...definition.recommended];
   const stageRoot = path.join(workspaceRoot, ideaSlug, stage);
 
   return await Promise.all(
     artifacts.map(async (artifact) => {
-      const blockingNotes = artifactIssueNotes(issues, artifact);
-      const notes = blockingNotes.length > 0 ? blockingNotes : await artifactNotes(stageRoot, artifact);
+      const errorNotes = artifactIssueNotes(issues, artifact, "error");
+      const warningNotes = artifactIssueNotes(issues, artifact, "warning");
+      // Fall back to a direct file check only when the validator reported no issues for this artifact.
+      const fileNotes = errorNotes.length + warningNotes.length > 0 ? [] : await artifactNotes(stageRoot, artifact, stage);
+      const notes = [...errorNotes, ...warningNotes, ...fileNotes];
 
       return {
         artifact,
         required: requiredArtifacts.has(artifact),
-        ok: notes.length === 0,
-        blocking: blockingNotes.length > 0,
+        // Warning-severity issues are advisory: they show as notes but do not fail (✗) or block the artifact.
+        ok: errorNotes.length === 0 && fileNotes.length === 0,
+        blocking: errorNotes.length > 0,
         notes,
       };
     }),
@@ -119,22 +124,25 @@ async function buildArtifactChecklist(
 }
 
 function summarizeGate(stage: Stage, issues: readonly ValidationIssue[]): IdeaReport["gate"] {
-  if (stage !== "idea") {
+  const gateCriteria = stageRegistry[stage].gateCriteria;
+
+  if (gateCriteria.length === 0) {
     return {
       passed: 0,
       total: 0,
       ok: true,
       blockers: [],
-      token: "n/a",
+      token: NO_GATE_TOKEN,
     };
   }
 
-  const blockedCriteria = new Set<GateCriterion>();
+  const criteria = new Set(gateCriteria);
+  const blockedCriteria = new Set<string>();
   let gateShapeBlocks = false;
 
   for (const issue of issues) {
-    if (issue.criterion !== undefined && gateCriteria.includes(issue.criterion as GateCriterion)) {
-      blockedCriteria.add(issue.criterion as GateCriterion);
+    if (issue.criterion !== undefined && criteria.has(issue.criterion)) {
+      blockedCriteria.add(issue.criterion);
       continue;
     }
 
@@ -158,7 +166,7 @@ function summarizeGate(stage: Stage, issues: readonly ValidationIssue[]): IdeaRe
 
 export async function buildIdeaReport(workspaceRoot: string, ideaSlug: string): Promise<IdeaReport> {
   const state = await readStateJson(path.join(workspaceRoot, ideaSlug, "state.json"));
-  const validation = await validateIdeaStage(workspaceRoot, ideaSlug, state.currentStage);
+  const validation = await validateStage(workspaceRoot, ideaSlug, state.currentStage);
   const gate = summarizeGate(state.currentStage, validation.issues);
 
   return {
@@ -179,18 +187,33 @@ export function renderStatusReport(report: IdeaReport): string {
     "Artifacts:",
   ];
 
-  for (const item of report.artifacts) {
-    const marker = item.ok ? "✓" : "✗";
-    const requiredLabel = item.required ? "required" : "recommended";
-    const blockingLabel = item.blocking ? " blocking" : "";
-    const note = item.notes.length > 0 ? ` - ${item.notes.join("; ")}` : "";
-    lines.push(`${marker} ${item.artifact}.md (${requiredLabel}${blockingLabel})${note}`);
+  if (report.artifacts.length === 0) {
+    lines.push("(no required artifacts for this stage yet)");
+  } else {
+    for (const item of report.artifacts) {
+      const marker = item.ok ? "✓" : "✗";
+      const requiredLabel = item.required ? "required" : "recommended";
+      const blockingLabel = item.blocking ? " blocking" : "";
+      const note = item.notes.length > 0 ? ` - ${item.notes.join("; ")}` : "";
+      lines.push(`${marker} ${item.artifact}.md (${requiredLabel}${blockingLabel})${note}`);
+    }
   }
 
-  const blocking = report.blockingIssues.filter((issue) => issue.code !== "INVALID_STATE");
+  const blocking = report.blockingIssues.filter(
+    (issue) =>
+      issue.severity === "error" && issue.code !== "INVALID_STATE" && issue.code !== "NO_GATE_DEFINED",
+  );
   if (blocking.length > 0) {
     lines.push("", "Blocking:");
     for (const issue of blocking) {
+      lines.push(`- ${issue.message}`);
+    }
+  }
+
+  const warnings = report.blockingIssues.filter((issue) => issue.severity === "warning");
+  if (warnings.length > 0) {
+    lines.push("", "Warnings:");
+    for (const issue of warnings) {
       lines.push(`- ${issue.message}`);
     }
   }
