@@ -1,13 +1,9 @@
 ---
 name: founder-idea
-description: Guide founders through the Idea-stage workflow for claude-founder-playbook, coordinating artifact work, gate checks, and the implemented founder CLI commands.
+description: Guide a founder through Idea-stage artifacts, evidence gates, and advancement.
 ---
 
 # Founder Idea
-
-## Purpose
-
-Use this skill to run an idea through the Playbook's Idea stage with evidence discipline. The skill coordinates conversation, artifact drafting, validation, and advancement without changing the deterministic harness.
 
 Read `templates/idea/_reference/surfaces.md` when choosing whether the next step belongs in Chat, Cowork, or Code.
 
@@ -44,12 +40,3 @@ The Idea gate is not a vibe check. It requires `GATE.md` to answer these criteri
 - `enough_signal_to_build`
 
 If `founder check` fails, keep working in the Idea stage and update the blocking artifacts or evidence links. If the founder knowingly wants to move on without a passing gate, explain the risk and use the harness override path only when they provide a concrete reason.
-
-## CLI Verbs Used
-
-This skill uses only implemented `founder` CLI verbs from the current slice:
-
-- `founder new`
-- `founder status`
-- `founder check`
-- `founder advance`

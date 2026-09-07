@@ -1,13 +1,9 @@
 ---
 name: founder-user-discovery
-description: Plan and synthesize Idea-stage customer discovery interviews, turning user evidence and prototype learnings into founder journey artifacts.
+description: Plan and synthesize Idea-stage interviews and prototype evidence.
 ---
 
 # Founder User Discovery
-
-## Purpose
-
-Use this skill to design useful customer discovery, synthesize interviews, and translate user evidence into the Idea-stage artifacts that support or block advancement.
 
 ## When To Use
 
@@ -31,9 +27,4 @@ Write or update:
 
 Tie every strong claim to the interview or prototype evidence that supports it.
 
-## CLI Verbs Used
-
-This skill does not add CLI behavior. Use implemented validation commands only when helpful:
-
-- `founder status`
-- `founder check`
+Use `founder status` or `founder check` when validating the updated artifacts.
