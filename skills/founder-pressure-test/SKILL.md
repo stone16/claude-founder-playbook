@@ -1,13 +1,13 @@
 ---
 name: founder-pressure-test
-description: Pressure-test an Idea-stage founder concept by challenging the problem, assumptions, solution, and evidence before gate validation.
+description: Challenge an Idea-stage problem, solution, and assumptions before gate validation.
 ---
 
 # Founder Pressure Test
 
 ## Purpose
 
-Use this skill to act as a structured devil's advocate for an Idea-stage concept. The goal is to expose weak assumptions, sharpen the problem, and make the solution concept harder to fool before the founder treats the idea as ready.
+Turn the strongest objections into testable assumptions and artifact updates.
 
 ## When To Use
 
@@ -32,7 +32,4 @@ Keep claims concise and evidence-linked. Record unresolved risks as explicit ass
 
 ## CLI Verbs Used
 
-This skill does not create new harness behavior. Use implemented validation commands only when helpful:
-
-- `founder status`
-- `founder check`
+Use `founder status` to inspect artifact presence and `founder check` to validate the Idea gate after updating artifacts.

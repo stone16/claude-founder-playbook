@@ -1,13 +1,13 @@
 ---
 name: founder-market-research
-description: Research an Idea-stage market by mapping competitor tiers, TAM/SAM/SOM, and relevant trends into the founder journey artifacts.
+description: Research Idea-stage competitors, market size, and trends for founder evidence artifacts.
 ---
 
 # Founder Market Research
 
 ## Purpose
 
-Use this skill to turn market research into decision-grade Idea-stage artifacts. The output should help a founder understand existing alternatives, realistic market scope, and whether timing creates a credible opening.
+Build market evidence that the Idea gate can trace to sources.
 
 ## When To Use
 
@@ -33,7 +33,4 @@ Separate sourced facts from interpretation so later gate checks can trace what t
 
 ## CLI Verbs Used
 
-This skill does not add CLI logic. Use implemented validation commands only when useful:
-
-- `founder status`
-- `founder check`
+Use `founder status` to inspect artifact presence and `founder check` to validate the Idea gate after updating artifacts.
