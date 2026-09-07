@@ -5,6 +5,10 @@ description: Research Idea-stage competitors, market size, and trends for founde
 
 # Founder Market Research
 
+## Purpose
+
+Build market evidence that the Idea gate can trace to sources.
+
 ## When To Use
 
 Use this skill when an idea needs competitor mapping, market sizing, category context, or trend analysis before an Idea gate decision. Do not use it to produce launch positioning, pricing pages, or investor narrative beyond the Idea-stage evidence needed here.
@@ -26,5 +30,7 @@ Write or update:
 - `idea/trend-analysis.md`
 
 Separate sourced facts from interpretation so later gate checks can trace what the founder actually knows.
+
+## CLI Verbs Used
 
 Use `founder status` or `founder check` when validating the updated artifacts.

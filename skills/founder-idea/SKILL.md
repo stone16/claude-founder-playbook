@@ -5,6 +5,10 @@ description: Guide a founder through Idea-stage artifacts, evidence gates, and a
 
 # Founder Idea
 
+## Purpose
+
+Maintain Idea-stage evidence and advance through the harness gate.
+
 Read `templates/idea/_reference/surfaces.md` when choosing whether the next step belongs in Chat, Cowork, or Code.
 
 ## When To Use
@@ -40,3 +44,7 @@ The Idea gate is not a vibe check. It requires `GATE.md` to answer these criteri
 - `enough_signal_to_build`
 
 If `founder check` fails, keep working in the Idea stage and update the blocking artifacts or evidence links. If the founder knowingly wants to move on without a passing gate, explain the risk and use the harness override path only when they provide a concrete reason.
+
+## CLI Verbs Used
+
+`founder new`, `founder status`, `founder check`, and `founder advance` follow the workflow above.

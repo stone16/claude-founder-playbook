@@ -5,6 +5,10 @@ description: Challenge an Idea-stage problem, solution, and assumptions before g
 
 # Founder Pressure Test
 
+## Purpose
+
+Turn the strongest objections into testable assumptions and artifact updates.
+
 ## When To Use
 
 Use this skill when a founder has an initial concept, a draft problem statement, or a proposed solution and needs a candid stress test. Do not use it for MVP architecture, launch planning, or fundraising materials.
@@ -25,5 +29,7 @@ Write or update:
 - `idea/solution-concept.md`
 
 Keep claims concise and evidence-linked. Record unresolved risks as explicit assumptions rather than smoothing them over.
+
+## CLI Verbs Used
 
 Use `founder status` or `founder check` when validating the updated artifacts.

@@ -5,6 +5,10 @@ description: Plan and synthesize Idea-stage interviews and prototype evidence.
 
 # Founder User Discovery
 
+## Purpose
+
+Turn interviews and prototype observations into traceable Idea-stage evidence.
+
 ## When To Use
 
 Use this skill when a founder needs to decide who to interview, what to ask, how to interpret responses, or how prototype feedback changes the idea. Do not use it for sales scripts, onboarding flows, or post-launch research programs.
@@ -26,5 +30,7 @@ Write or update:
 - `idea/prototype-learnings.md`
 
 Tie every strong claim to the interview or prototype evidence that supports it.
+
+## CLI Verbs Used
 
 Use `founder status` or `founder check` when validating the updated artifacts.
