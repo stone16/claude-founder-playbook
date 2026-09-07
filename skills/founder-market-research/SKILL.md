@@ -33,4 +33,4 @@ Separate sourced facts from interpretation so later gate checks can trace what t
 
 ## CLI Verbs Used
 
-Use `founder status` or `founder check` when validating the updated artifacts.
+Use `founder status` to inspect artifact presence and `founder check` to validate the Idea gate after updating artifacts.
